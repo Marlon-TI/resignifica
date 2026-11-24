@@ -13,18 +13,21 @@
       <div class="auth"><main class="box" id="main">
         ${logo}
         <div class="card">
-          <h1>Boas-vindas</h1>
-          <p>O ReSignifica ajuda você a registrar situações, pensamentos, emoções e reações, e a refletir sobre eles com perguntas guiadas, para construir interpretações mais equilibradas, no seu ritmo.</p>
-          <p>Você pode usar fazendo terapia ou não. Se quiser, pode gerar um relatório para conversar com um profissional da sua escolha.</p>
+          <h1>Boas-vindas!</h1>
+          ${RS.content.WELCOME}
         </div>
         <div class="card soft">
           <h2>Antes de começar</h2>
-          <ul class="notice-list">${RS.content.NOTICES.map((n) => `<li>${n}</li>`).join('')}</ul>
+          ${RS.content.NOTICE_BLOCKS.map((n) => `<h3 class="mt">${n.title}</h3><p>${n.text}</p>`).join('')}
+        </div>
+        <div class="card">
+          <h2>Confirmações</h2>
           <form id="f-welcome">
             <label class="check"><input type="checkbox" name="age" required> <span>Tenho 18 anos ou mais.</span></label>
-            <label class="check"><input type="checkbox" name="terms" required> <span>Li e entendi os avisos acima e a <a href="#/privacidade-publica">política de privacidade</a>.</span></label>
+            <label class="check"><input type="checkbox" name="limits" required> <span>Compreendo a finalidade e os limites de utilização do ReSignifica.</span></label>
+            <label class="check"><input type="checkbox" name="terms" required> <span>Li e compreendi a <a href="#/privacidade-publica">Política de Privacidade</a> e os <a href="#/termos-publicos">Termos de Uso</a>.</span></label>
             <div class="btn-row mt">
-              <button class="btn" type="submit">Criar minha conta</button>
+              <button class="btn" type="submit" id="wl-go" disabled>Criar minha conta</button>
               <a class="btn secondary" href="#/entrar">Já tenho conta</a>
             </div>
           </form>
@@ -32,8 +35,13 @@
         ${helpLink}
       </main></div>`,
     mount: (root) => {
-      root.querySelector('#f-welcome').addEventListener('submit', (e) => {
+      const f = root.querySelector('#f-welcome');
+      const go = root.querySelector('#wl-go');
+      const upd = () => { go.disabled = !['age', 'limits', 'terms'].every((n) => f[n].checked); };
+      f.addEventListener('change', upd); upd();
+      f.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (go.disabled) return;
         sessionStorage.setItem('rs-consent', '1');
         location.hash = '#/cadastro';
       });
@@ -48,11 +56,16 @@
         <div class="card">
           <h1>Criar conta</h1>
           <form id="f-signup" novalidate>
-            <div class="field"><label for="su-name">Como gostaria de ser chamado(a)?</label>
-              <input id="su-name" name="name" type="text" autocomplete="nickname" required maxlength="60">
-              <span class="hint">Pode ser um apelido.</span></div>
+            <h2>Como você gostaria de ser chamado(a)?</h2>
+            <p>Este é um espaço de reflexão e autoconhecimento. Você pode utilizar seu nome, um apelido ou um nome fictício, se isso fizer você se sentir mais confortável.</p>
+            <div class="field"><label for="su-name">Como podemos chamar você? <span class="hint" style="display:inline">(opcional)</span></label>
+              <input id="su-name" name="name" type="text" autocomplete="nickname" maxlength="60">
+              <span class="hint">Não é necessário informar seu nome verdadeiro. Você poderá alterar essa escolha quando desejar.</span></div>
+            <p class="muted"><em>Você não precisa informar seu nome verdadeiro para começar a se compreender.</em></p>
+            <h2 class="mt">Acesso</h2>
             <div class="field"><label for="su-email">E-mail</label>
-              <input id="su-email" name="email" type="email" autocomplete="email" required></div>
+              <input id="su-email" name="email" type="email" autocomplete="email" required>
+              <span class="hint">Usado só para entrar no app neste aparelho. Nada é enviado.</span></div>
             <div class="field"><label for="su-pw">Senha</label>
               <input id="su-pw" name="pw" type="password" autocomplete="new-password" required minlength="8">
               <span class="hint">Mínimo de 8 caracteres. Use uma senha que só você saiba.</span></div>
@@ -75,7 +88,6 @@
         e.preventDefault();
         const d = Object.fromEntries(new FormData(f));
         err.textContent = '';
-        if (!d.name.trim()) return (err.textContent = 'Informe como gostaria de ser chamado(a).');
         if (!/^\S+@\S+\.\S+$/.test(d.email)) return (err.textContent = 'Informe um e-mail válido.');
         if (d.pw.length < 8) return (err.textContent = 'A senha precisa ter pelo menos 8 caracteres.');
         if (d.pw !== d.pw2) return (err.textContent = 'As senhas não conferem.');
@@ -89,7 +101,7 @@
           RS.store.requestPersistence();
           RS.app.onLogin();
           location.hash = '#/';
-          RS.toast(`Que bom ter você aqui, ${d.name.trim()}.`);
+          RS.toast(d.name.trim() ? `Que bom ter você aqui, ${d.name.trim()}.` : 'Que bom ter você aqui.');
         } catch (ex) {
           err.textContent = ex.message; btn.disabled = false; btn.textContent = 'Criar conta';
         }
@@ -169,16 +181,19 @@
       <button type="button" class="btn secondary" data-back>Voltar</button></main></div>`,
   });
   RS.views.helpPublic = publicPage('Apoio em crises', () => RS.content.CRISIS);
-  RS.views.privacyPublic = publicPage('Política de privacidade', () => RS.views.privacyText());
+  RS.views.privacyPublic = publicPage('Política de Privacidade', () => RS.views.privacyText());
+  RS.views.termsPublic = publicPage('Termos de Uso', () => RS.content.TERMS);
 
   RS.views.privacyText = () => `
-    <p class="card warn">Versão provisória para protótipo. A política definitiva deve ser elaborada com apoio jurídico (LGPD), conforme o briefing §7.</p>
-    <h2>O que guardamos</h2>
-    <p>Nome ou apelido, e-mail, e o conteúdo que você registra: situações, pensamentos, emoções, reflexões e notas. Esses registros podem revelar dados pessoais sensíveis.</p>
+    <p class="card warn">Versão provisória para o piloto. A Política de Privacidade definitiva e a base legal para dados sensíveis devem ser definidas com assessoria especializada em LGPD.</p>
+    <h2>O que é guardado</h2>
+    <p>Um e-mail para entrar, um nome de preferência (opcional, pode ser fictício) e o conteúdo que você registra: situações, pensamentos, emoções, reflexões e notas. Esses registros podem revelar dados pessoais sensíveis.</p>
     <h2>Onde e como</h2>
-    <p>Nesta versão, tudo fica <strong>neste aparelho</strong>, criptografado com AES-256 a partir da sua senha. Nenhum registro é enviado a servidores.</p>
-    <h2>O que não fazemos</h2>
-    <ul><li>Não enviamos registros a terceiros nem a terapeutas sem uma ação explícita sua.</li><li>Não usamos registros para publicidade nem para treinar inteligência artificial.</li><li>Não criamos links públicos para relatórios.</li></ul>
+    <p>Nesta versão de teste, tudo fica <strong>neste aparelho</strong>, criptografado com AES-256 a partir da sua senha. Nenhum registro é enviado a servidores.</p>
+    <h2>Compartilhamento</h2>
+    <ul><li>Nada é enviado a terceiros nem a terapeutas sem uma ação explícita sua.</li><li>Não são criados links públicos para relatórios.</li></ul>
+    <h2>Privacidade não é anonimato</h2>
+    <p>Usar um apelido ou nome fictício pode deixar você mais à vontade, mas não garante anonimato: o e-mail e o próprio conteúdo dos relatos podem identificar uma pessoa.</p>
     <h2>Seus direitos</h2>
-    <p>Em Perfil e privacidade você pode exportar seus dados, excluir registros e excluir a conta com todos os dados.</p>`;
+    <p>Em Perfil e privacidade você pode alterar seu nome de preferência, exportar seus dados, excluir registros e excluir a conta com todos os dados.</p>`;
 })(window.RS);

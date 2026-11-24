@@ -1,10 +1,33 @@
-# ReSignifica · Protótipo funcional v0.1
+# ReSignifica · Versão piloto v0.2
 
 > *Um pensamento de cada vez.*
 > Implementação do **Briefing de produto v1.0** (23/11/2026), seguindo o escopo de MVP da §9.
 > É um app web responsivo e instalável (PWA), sem servidor. Os dados ficam no aparelho do usuário, criptografados.
 >
 > **Versão de teste online:** https://marlon-ti.github.io/resignifica/ · Guia rápido: [COMO-TESTAR.md](COMO-TESTAR.md)
+
+---
+
+## Novidades da versão 0.2 (revisão do piloto, 24/11/2026)
+
+Aplicadas as recomendações de *ReSignifica – Revisão do projeto piloto* (conteúdo psicológico: Rosália Moreira):
+
+| Revisão | O que mudou |
+|---|---|
+| Boas-vindas | Novo texto de abertura e 4 blocos ("Conhecimento que transforma", "Cuidado com responsabilidade", "Sua privacidade importa", "Quando precisar de ajuda") |
+| Confirmações | 3 confirmações separadas (18+, finalidade e limites, Política de Privacidade e Termos de Uso); botão só libera com as três. Termos de Uso provisórios |
+| Identificação livre | Nome de preferência **opcional** (nome, apelido, fictício ou nenhum); saudação neutra sem nome; editável no perfil |
+| Privacidade | Removidas promessas sobre publicidade/IA até confirmação técnica e contratual; aviso de que privacidade não é anonimato |
+| Meu momento | "Não consigo identificar o que estou sentindo", emoção personalizada, escala 0–100 explicada, pergunta "O que contribuiu…" |
+| Registro | **9 etapas**: situação, pensamento, **grau de crença**, emoções, sensações, comportamento, reflexão, **reavaliação da crença e das emoções**, **plano de ação**, mais revisão final. Breve, rascunho e pular etapas mantidos |
+| Outras perspectivas | Princípio clínico (realista, flexível e funcional; nem todo pensamento desconfortável é distorcido) e novo banco de 7 perguntas socráticas, 2 por vez |
+| Aprender | Correção conceitual sobre interpretação e outros fatores (experiências, condições físicas, contexto) |
+| Minha jornada | Grau de crença antes/depois; aviso de que intensidade igual ou maior não é fracasso |
+| Relatório | Formatos **resumido** e **completo**; nome: nenhum, de preferência ou outro só para o relatório; remover itens na prévia; metadados do PDF neutros; pergunta de fechamento nova |
+| Sobre | Nova área "Sobre o ReSignifica": propósito, idealização, fundamentação, referências e limites (CRP a confirmar) |
+| Acessibilidade | Fonte base maior, bordas de campos com mais contraste, mais espaçamento |
+
+**Fica para a equipe** (não é código): validação clínica de todos os textos, parecer jurídico/LGPD, definição de armazenamento definitivo e o teste piloto com 15 pessoas.
 
 ---
 

@@ -13,8 +13,9 @@
         <h1>Perfil e privacidade</h1>
         <section class="card"><h2>Perfil</h2>
           <form id="pf-name" class="field">
-            <label for="pf-n">Como gostaria de ser chamado(a)?</label>
+            <label for="pf-n">Como podemos chamar você? <span class="hint" style="display:inline">(opcional)</span></label>
             <div class="btn-row"><input id="pf-n" type="text" value="${esc(account.name)}" maxlength="60" style="flex:1;min-width:200px"><button class="btn secondary" type="submit">Salvar</button></div>
+            <span class="hint">Pode ser seu nome, um apelido, um nome fictício, ou ficar em branco. Usado só para personalizar o app.</span>
           </form>
           <p class="muted mb0">E-mail: ${esc(account.email)} · Conta criada em ${RS.fmtDate(account.createdAt)}</p>
         </section>
@@ -43,11 +44,12 @@
         </section>
 
         <section class="card"><h2>Seus dados</h2>
-          <p>Seus registros ficam neste aparelho, criptografados com a sua senha. Não são usados para publicidade nem para treinar inteligência artificial.</p>
+          <p>Seus registros ficam neste aparelho, criptografados com a sua senha. Nada é compartilhado sem uma ação sua.</p>
           <p class="muted">${data.records.filter((r) => r.persisted !== false).length} registro(s) de pensamento · ${data.checkins.length} check-in(s)</p>
           <div class="btn-row">
             <button class="btn secondary" id="exp">Exportar meus dados (JSON)</button>
-            <a class="btn ghost" href="#/privacidade">Política de privacidade</a>
+            <a class="btn ghost" href="#/privacidade">Política de Privacidade</a>
+            <a class="btn ghost" href="#/termos">Termos de Uso</a>
           </div>
           <p class="muted mt mb0">A exportação gera um arquivo <strong>sem criptografia</strong>, legível por qualquer pessoa que tenha acesso a ele. Guarde-o em local seguro.</p>
         </section>
@@ -64,7 +66,7 @@
           <p>O ReSignifica é uma ferramenta educativa e de autoconhecimento. Não faz diagnóstico, não oferece atendimento psicológico e não substitui terapia.</p>
           <a class="btn secondary" href="#/ajuda">${RS.icon('help')} Ajuda e apoio em crises</a>
         </section>
-        <p class="muted">ReSignifica · versão protótipo 0.1 · baseado no briefing v1.0</p>`;
+        <p class="muted">ReSignifica · versão piloto 0.2 · briefing v1.0 + revisão do piloto (24/11/2026) · <a href="#/sobre">Sobre o ReSignifica</a></p>`;
     },
     mount: (root) => {
       const { data } = RS.store.session;
@@ -74,8 +76,7 @@
       root.querySelector('#pf-name').addEventListener('submit', async (e) => {
         e.preventDefault();
         const v = root.querySelector('#pf-n').value.trim();
-        if (!v) return RS.toast('Informe um nome ou apelido.');
-        await RS.store.updateAccountName(v); RS.toast('Nome atualizado.');
+        await RS.store.updateAccountName(v); RS.toast(v ? 'Nome atualizado.' : 'Nome removido. O app usará uma saudação neutra.');
       });
 
       const on = root.querySelector('#rm-on'); const t = root.querySelector('#rm-t');

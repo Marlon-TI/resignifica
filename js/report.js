@@ -7,17 +7,19 @@
   const MIN_CHART = 3;
 
   const FIELDS = [
-    ['situacao', 'Situação'], ['pensamentos', 'Pensamentos'], ['emocoes', 'Emoções e intensidade'],
-    ['evidencias', 'Evidências e reflexão'], ['alternativos', 'Pensamentos alternativos'],
-    ['evolucao', 'Evolução (intensidade após a reflexão)'], ['notas', 'Notas'],
+    ['situacao', 'Situação'], ['pensamentos', 'Pensamentos automáticos'], ['crenca', 'Grau de crença'],
+    ['emocoes', 'Emoções e intensidades'], ['corpo', 'Sensações físicas e comportamento'],
+    ['evidencias', 'Evidências e reflexão'], ['alternativos', 'Formas mais equilibradas de compreender'],
+    ['reavaliacao', 'Reavaliação (crença e emoções após a reflexão)'], ['plano', 'Plano de ação'], ['notas', 'Notas'],
   ];
+  const TALK_Q = 'Existe algo que você gostaria de conversar com seu terapeuta na próxima sessão?';
 
   let st = null;
   const reset = () => {
     st = {
-      stage: 'form', period: '30', from: RS.toDateInput(RS.daysAgo(30)), to: RS.toDateInput(new Date()),
-      excluded: new Set(), fields: Object.fromEntries(FIELDS.map(([k]) => [k, true])),
-      includeCheckins: false, showName: false, talk: '', pdf: null,
+      stage: 'form', format: 'resumido', period: '30', from: RS.toDateInput(RS.daysAgo(30)), to: RS.toDateInput(new Date()),
+      excluded: new Set(), excludedCk: new Set(), fields: Object.fromEntries(FIELDS.map(([k]) => [k, true])),
+      includeCheckins: false, nameMode: 'none', customName: '', talk: '', pdf: null, blocks: null,
     };
   };
 
@@ -31,96 +33,140 @@
   const periodRecords = () => { const r = range(); return RS.store.records().filter((x) => x.status !== 'rascunho' && inRange(x.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
   const selectedRecords = () => periodRecords().filter((x) => !st.excluded.has(x.id));
   const periodCheckins = () => { const r = range(); return RS.store.checkins().filter((c) => inRange(c.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
+  const selectedCheckins = () => (st.includeCheckins ? periodCheckins().filter((c) => !st.excludedCk.has(c.id)) : []);
+  const reportName = () => {
+    if (st.nameMode === 'preferred') return (RS.store.session.data.profile.name || '').trim();
+    if (st.nameMode === 'custom') return st.customName.trim();
+    return '';
+  };
+  const thoughtsWithBelief = (x, withBelief) => (x.pensamentos || []).map((p, i) => {
+    if (!p || !p.trim()) return '';
+    const a = (x.crencaAntes || [])[i];
+    return withBelief && a != null ? `${p} (crença: ${a}/100)` : p;
+  }).filter(Boolean);
+  const distNames = (x) => (x.distorcoes || []).map((id) => (RS.content.DISTORTIONS.find((z) => z.id === id) || {}).name).filter(Boolean);
+  function beliefAvg(recs) {
+    let n = 0; let a = 0; let d = 0;
+    recs.forEach((x) => (x.crencaAntes || []).forEach((v, i) => { const w = (x.crencaDepois || [])[i]; if (v != null && w != null && (x.pensamentos[i] || '').trim()) { n++; a += v; d += w; } }));
+    return n ? { n, antes: Math.round(a / n), depois: Math.round(d / n) } : null;
+  }
 
   /* ---------- Modelo do relatório → blocos ---------- */
   function buildBlocks() {
     const r = range();
     const recs = selectedRecords();
-    const cks = st.includeCheckins ? periodCheckins() : [];
+    const cks = selectedCheckins();
     const F = st.fields;
+    const full = st.format === 'completo';
     const B = [];
     const generatedAt = new Date().toISOString();
 
-    // 1. Cabeçalho e período
-    B.push({ t: 'title', text: 'ReSignifica · Relatório de registros' });
+    // Cabeçalho e período
+    B.push({ t: 'title', text: `ReSignifica · Relatório ${full ? 'completo' : 'resumido'}` });
     B.push({ t: 'meta', text: `${r.label}: ${fmtDate(r.from.toISOString())} a ${fmtDate(r.to.toISOString())}` });
-    if (st.showName) B.push({ t: 'meta', text: `Nome: ${RS.store.session.data.profile.name}` });
-    B.push({ t: 'note', text: 'Relatório descritivo gerado pelo próprio usuário para apoiar a conversa com um profissional. Não é diagnóstico nem avaliação clínica.' });
+    const nm = reportName();
+    if (nm) B.push({ t: 'meta', text: `Nome: ${nm}` });
+    B.push({ t: 'note', text: 'Relatório descritivo gerado pelo próprio usuário para apoiar a conversa com um profissional. Apresenta padrões descritivos; não é diagnóstico nem interpretação clínica.' });
 
-    // 2. Resumo dos registros
+    // Resumo
     B.push({ t: 'h2', text: 'Resumo dos registros' });
     const comp = recs.filter((x) => x.status === 'completo').length;
-    const summary = [`Registros de pensamento selecionados: ${recs.length} (${comp} com reflexão, ${recs.length - comp} breve${recs.length - comp === 1 ? "" : "s"}).`];
-    if (st.includeCheckins) summary.push(`Check-ins do “Meu momento” no período: ${cks.length}.`);
+    const days = new Set([...recs, ...cks].map((x) => RS.dayKey(x.when))).size;
+    const summary = [`Registros de pensamento: ${recs.length} (${comp} com reflexão, ${recs.length - comp} breve${recs.length - comp === 1 ? '' : 's'}).`];
+    if (st.includeCheckins) summary.push(`Check-ins do “Meu momento”: ${cks.length}.`);
+    summary.push(`Dias com algum registro: ${days}.`);
     B.push({ t: 'p', text: summary.join(' ') });
 
-    // 3. Registros detalhados selecionados
-    if (recs.length) {
-      B.push({ t: 'h2', text: 'Registros detalhados' });
-      recs.forEach((x, i) => {
-        const rows = [];
-        if (F.situacao) { if (x.situacao) rows.push(['Situação', x.situacao]); if (x.contexto) rows.push(['Contexto', x.contexto]); }
-        if (F.pensamentos) { const p = (x.pensamentos || []).filter((s) => s && s.trim()); if (p.length) rows.push(['Pensamento automático', p.join('\n')]); }
-        if (F.emocoes && x.emocoes.length) rows.push(['Emoções', x.emocoes.map((e) => `${e.nome}: ${e.antes}/100`).join(' · ')]);
-        if (F.emocoes) { if (x.sensacoes) rows.push(['Sensações físicas', x.sensacoes]); if (x.comportamento) rows.push(['Comportamento / reação', x.comportamento]); }
-        if (F.evidencias) {
-          if (x.evidFavor) rows.push(['Evidências a favor', x.evidFavor]);
-          if (x.evidContra) rows.push(['Evidências contrárias / outras possibilidades', x.evidContra]);
-          if (x.outrasExplic) rows.push(['Outras explicações', x.outrasExplic]);
-          if (x.alguemQuerido) rows.push(['O que diria a alguém querido', x.alguemQuerido]);
-          const d = (x.distorcoes || []).map((id) => (RS.content.DISTORTIONS.find((z) => z.id === id) || {}).name).filter(Boolean);
-          if (d.length) rows.push(['Padrões que o usuário identificou', d.join(', ')]);
-        }
-        if (F.alternativos && x.alternativo) rows.push(['Pensamento alternativo', x.alternativo]);
-        if (F.evolucao) { const ev = x.emocoes.filter((e) => e.depois != null); if (ev.length) rows.push(['Evolução após a reflexão', ev.map((e) => `${e.nome}: de ${e.antes} para ${e.depois}`).join(' · ')]); }
-        if (F.notas && x.notas) rows.push(['Notas', x.notas]);
-        B.push({ t: 'rec', title: `${i + 1}. ${fmtDateTime(x.when)}${x.status === 'completo' ? ' · com reflexão' : ' · breve'}`, rows });
-      });
-    }
-
-    if (cks.length) {
-      B.push({ t: 'h2', text: 'Check-ins do “Meu momento”' });
-      cks.forEach((c) => {
-        const rows = [];
-        const mood = (RS.content.MOODS.find((m) => m.v === c.humor) || {}).label;
-        if (mood) rows.push(['Estado geral', mood]);
-        if (c.emocoes.length) rows.push(['Emoções', c.emocoes.map((e) => `${e.nome}: ${e.intensidade}/100`).join(' · ')]);
-        if (F.notas && c.notas) rows.push(['Notas', c.notas]);
-        B.push({ t: 'rec', title: fmtDateTime(c.when), rows });
-      });
-    }
-
-    // 4. Emoções e intensidades
-    if (F.emocoes && (recs.length || cks.length)) {
+    if (!full) {
+      // RESUMIDO: frequência, emoções predominantes, padrões, evolução emocional, pautas
       const freq = RS.stats.emotionFreq(recs, cks);
       if (freq.length) {
-        B.push({ t: 'h2', text: 'Emoções e intensidades' });
-        B.push({ t: 'p', text: freq.map((e) => `${e.nome}: ${e.n} vez(es), intensidade média ${e.media}/100`).join('\n') });
+        B.push({ t: 'h2', text: 'Emoções predominantes' });
+        B.push({ t: 'p', text: freq.slice(0, 8).map((e) => `${e.nome}: ${e.n} vez(es), intensidade média ${e.media}/100`).join('\n') });
         if (recs.length + cks.length >= MIN_CHART) B.push({ t: 'bars', caption: 'Frequência das emoções registradas', rows: freq.slice(0, 8).map((e) => ({ label: e.nome, value: e.n })) });
-        if (F.evolucao) {
-          const ba = RS.stats.beforeAfter(recs);
-          if (ba.reduce((s, x) => s + x.n, 0) >= MIN_CHART) B.push({ t: 'p', text: 'Média antes e depois da reflexão: ' + ba.map((x) => `${x.nome} de ${x.antes} para ${x.depois} (${x.n} registro(s))`).join(' · ') });
+      }
+      const nao = cks.filter((c) => c.naoIdentifica).length;
+      if (nao) B.push({ t: 'p', text: `Em ${nao} check-in(s), a pessoa indicou não conseguir identificar o que sentia.` });
+      const dist = RS.stats.distortionFreq(recs);
+      if (dist.length) {
+        B.push({ t: 'h2', text: 'Padrões de pensamento marcados pelo usuário' });
+        B.push({ t: 'p', text: dist.map((d) => `${d.name}: ${d.n} vez(es)`).join('\n') });
+      }
+      const ba = RS.stats.beforeAfter(recs); const bl = beliefAvg(recs);
+      if (ba.length || bl) {
+        B.push({ t: 'h2', text: 'Evolução emocional após a reflexão' });
+        if (ba.length) B.push({ t: 'p', text: ba.map((x) => `${x.nome}: média de ${x.antes} para ${x.depois} (${x.n} reavaliação(ões))`).join('\n') });
+        if (bl) B.push({ t: 'p', text: `Grau de crença no pensamento inicial: média de ${bl.antes} para ${bl.depois} (${bl.n} reavaliação(ões)).` });
+        B.push({ t: 'note', text: 'Intensidade igual ou maior após a reflexão não significa fracasso.' });
+      }
+    } else {
+      // COMPLETO: registros detalhados conforme campos escolhidos
+      if (recs.length) {
+        B.push({ t: 'h2', text: 'Registros detalhados' });
+        recs.forEach((x, i) => {
+          const rows = [];
+          if (F.situacao) { if (x.situacao) rows.push(['Situação', x.situacao]); if (x.contexto) rows.push(['Contexto', x.contexto]); }
+          if (F.pensamentos) { const p = thoughtsWithBelief(x, F.crenca); if (p.length) rows.push(['Pensamento automático', p.join('\n')]); }
+          else if (F.crenca) { const c = (x.crencaAntes || []).filter((v, k) => v != null && (x.pensamentos[k] || '').trim()); if (c.length) rows.push(['Grau de crença', c.map((v) => `${v}/100`).join(' · ')]); }
+          if (F.emocoes && x.emocoes.length) rows.push(['Emoções', x.emocoes.map((e) => `${e.nome}: ${e.antes}/100`).join(' · ')]);
+          if (F.corpo) { if (x.sensacoes) rows.push(['Sensações físicas', x.sensacoes]); if (x.comportamento) rows.push(['Comportamento', x.comportamento]); }
+          if (F.evidencias) {
+            if (x.evidFavor) rows.push(['Evidências que sustentam o pensamento', x.evidFavor]);
+            if (x.evidContra) rows.push(['Evidências que não estavam sendo consideradas', x.evidContra]);
+            if (x.outrasExplic) rows.push(['Outras maneiras de compreender', x.outrasExplic]);
+            if (x.alguemQuerido) rows.push(['O que diria a alguém querido', x.alguemQuerido]);
+            const d = distNames(x); if (d.length) rows.push(['Padrões que o usuário identificou', d.join(', ')]);
+          }
+          if (F.alternativos && x.alternativo) rows.push(['Forma mais equilibrada de compreender', x.alternativo]);
+          if (F.reavaliacao) {
+            const cr = (x.crencaDepois || []).map((v, k) => (v != null && (x.pensamentos[k] || '').trim() ? `de ${x.crencaAntes[k]} para ${v}` : '')).filter(Boolean);
+            if (cr.length) rows.push(['Grau de crença após a reflexão', cr.join(' · ')]);
+            const ev = x.emocoes.filter((e) => e.depois != null);
+            if (ev.length) rows.push(['Emoções após a reflexão', ev.map((e) => `${e.nome}: de ${e.antes} para ${e.depois}`).join(' · ')]);
+          }
+          if (F.plano && x.planoAcao) rows.push(['Plano de ação', x.planoAcao]);
+          if (F.notas && x.notas) rows.push(['Notas', x.notas]);
+          B.push({ t: 'rec', recId: x.id, title: `${i + 1}. ${fmtDateTime(x.when)}${x.status === 'completo' ? ' · com reflexão' : ' · breve'}`, rows });
+        });
+      }
+      if (cks.length) {
+        B.push({ t: 'h2', text: 'Check-ins do “Meu momento”' });
+        cks.forEach((c) => {
+          const rows = [];
+          const mood = (RS.content.MOODS.find((m) => m.v === c.humor) || {}).label;
+          if (mood) rows.push(['Estado geral', mood]);
+          if (c.emocoes.length) rows.push(['Emoções', c.emocoes.map((e) => `${e.nome}: ${e.intensidade}/100`).join(' · ')]);
+          if (c.naoIdentifica) rows.push(['Identificação das emoções', 'Não consegui identificar o que estava sentindo']);
+          if (F.notas && c.contribuiu) rows.push(['O que contribuiu', c.contribuiu]);
+          if (F.notas && c.notas) rows.push(['Notas', c.notas]);
+          B.push({ t: 'rec', ckId: c.id, title: fmtDateTime(c.when), rows });
+        });
+      }
+      if (F.emocoes && (recs.length || cks.length)) {
+        const freq = RS.stats.emotionFreq(recs, cks);
+        if (freq.length) {
+          B.push({ t: 'h2', text: 'Emoções e intensidades' });
+          B.push({ t: 'p', text: freq.map((e) => `${e.nome}: ${e.n} vez(es), intensidade média ${e.media}/100`).join('\n') });
+          if (recs.length + cks.length >= MIN_CHART) B.push({ t: 'bars', caption: 'Frequência das emoções registradas', rows: freq.slice(0, 8).map((e) => ({ label: e.nome, value: e.n })) });
+        }
+      }
+      if (F.alternativos) {
+        const alts = recs.filter((x) => x.alternativo && x.alternativo.trim());
+        if (alts.length) {
+          B.push({ t: 'h2', text: 'Formas mais equilibradas de compreender' });
+          alts.forEach((x) => B.push({ t: 'rec', recId: x.id, title: fmtDate(x.when), rows: [['Pensamento automático', (x.pensamentos || []).filter(Boolean).join('\n') || '-'], ['Forma mais equilibrada', x.alternativo]] }));
         }
       }
     }
 
-    // 5. Pensamentos alternativos
-    if (F.alternativos) {
-      const alts = recs.filter((x) => x.alternativo && x.alternativo.trim());
-      if (alts.length) {
-        B.push({ t: 'h2', text: 'Pensamentos alternativos' });
-        alts.forEach((x) => B.push({ t: 'rec', title: fmtDate(x.when), rows: [['Pensamento automático', (x.pensamentos || []).filter(Boolean).join('\n') || '—'], ['Pensamento alternativo', x.alternativo]] }));
-      }
-    }
-
-    // 6. Observações para a próxima sessão
+    // Pautas para a próxima sessão
     if (st.talk.trim()) {
-      B.push({ t: 'h2', text: 'O que gostaria de conversar na próxima sessão' });
+      B.push({ t: 'h2', text: 'Assuntos para a próxima sessão' });
       B.push({ t: 'highlight', text: st.talk.trim() });
     }
 
-    // 7. Rodapé
-    B.push({ t: 'footer', text: `Gerado em ${fmtDateTime(generatedAt)} pelo aplicativo ReSignifica. CONFIDENCIAL: contém informações pessoais e sensíveis, destinadas exclusivamente ao profissional escolhido pelo usuário.` });
+    // Rodapé
+    B.push({ t: 'footer', text: `Gerado em ${fmtDateTime(generatedAt)} pelo aplicativo ReSignifica. CONFIDENCIAL: contém informações pessoais e sensíveis, destinadas exclusivamente ao profissional escolhido pelo usuário. A ausência do nome não garante anonimato.` });
     return B.map(sanitizeBlock);
   }
 
@@ -137,7 +183,7 @@
   }
 
   /* ---------- Blocos → HTML (prévia) ---------- */
-  function blocksToHTML(B) {
+  function blocksToHTML(B, editable) {
     const nl = (s) => esc(s).replace(/\n/g, '<br>');
     return B.map((b) => {
       switch (b.t) {
@@ -147,7 +193,7 @@
         case 'h2': return `<h2>${esc(b.text)}</h2>`;
         case 'p': return `<p>${nl(b.text)}</p>`;
         case 'highlight': return `<p class="highlight">${nl(b.text)}</p>`;
-        case 'rec': return `<div class="rec"><h3>${esc(b.title)}</h3>${b.rows.length ? b.rows.map(([l, v]) => `<p class="mb0"><span class="lbl">${esc(l)}:</span> ${nl(v)}</p>`).join('') : '<p class="muted mb0">Nenhum dos campos escolhidos foi preenchido.</p>'}</div>`;
+        case 'rec': return `<div class="rec"><h3>${esc(b.title)}</h3>${editable && (b.recId || b.ckId) ? `<button type="button" class="btn ghost small no-print" data-rm-rec="${b.recId || ''}" data-rm-ck="${b.ckId || ''}">Remover do relatório</button>` : ''}${b.rows.length ? b.rows.map(([l, v]) => `<p class="mb0"><span class="lbl">${esc(l)}:</span> ${nl(v)}</p>`).join('') : '<p class="muted mb0">Nenhum dos campos escolhidos foi preenchido.</p>'}</div>`;
         case 'bars': { const max = Math.max(...b.rows.map((r) => r.value)); return `<p class="lbl mb0">${esc(b.caption)}</p><div class="bars">${b.rows.map((r) => `<div class="bar"><span>${esc(r.label)}</span><span class="track"><span class="fill" style="width:${Math.round((r.value / max) * 100)}%"></span></span><span class="n">${r.value}</span></div>`).join('')}</div>`; }
         case 'footer': return `<div class="foot">${esc(b.text)}</div>`;
         default: return '';
@@ -159,6 +205,8 @@
   function blocksToPDF(B) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    // Metadados neutros: sem nome, e-mail ou conteúdo do usuário
+    doc.setDocumentProperties({ title: 'Relatório ReSignifica', subject: '', author: '', keywords: '', creator: 'ReSignifica' });
     const W = 210; const H = 297; const M = 18; const CW = W - 2 * M;
     const footer = B.find((b) => b.t === 'footer');
     let y = M;
@@ -226,14 +274,14 @@
         const blocks = st.blocks || (st.blocks = buildBlocks());
         return `
           <h1>${st.stage === 'done' ? 'Relatório pronto' : 'Pré-visualização'}</h1>
-          <p class="muted">${st.stage === 'done' ? 'O PDF foi gerado neste aparelho. Ele não foi enviado a ninguém.' : 'O PDF terá exatamente este conteúdo. Revise antes de gerar.'}</p>
+          <p class="muted">${st.stage === 'done' ? 'O PDF foi gerado neste aparelho. Ele não foi enviado a ninguém.' : 'O PDF terá exatamente este conteúdo. Revise e, se quiser, remova itens antes de gerar.'}</p>
           ${st.stage === 'done' ? `
             <div class="card soft no-print">
               <div class="btn-row"><button class="btn" id="dl">Baixar PDF</button>
               ${canShare() ? '<button class="btn secondary" id="sh">' + RS.icon('share') + ' Compartilhar…</button>' : ''}</div>
               <p class="muted mt mb0">${canShare() ? 'Ao compartilhar, você escolhe o aplicativo e o destinatário e confirma o envio nele.' : 'Este navegador não permite compartilhar arquivos diretamente. Baixe o PDF e envie pelo aplicativo que preferir.'}</p>
             </div>` : ''}
-          <div class="report-preview" id="pv">${blocksToHTML(blocks)}</div>
+          <div class="report-preview" id="pv">${blocksToHTML(blocks, st.stage === 'preview')}</div>
           <div class="btn-row mt no-print">
             <button class="btn secondary" id="back">Voltar e ajustar</button>
             ${st.stage === 'preview' ? '<button class="btn" id="gen">Gerar PDF</button>' : '<button class="btn ghost" id="new">Novo relatório</button>'}
@@ -245,29 +293,42 @@
         <h1>Compartilhar com meu terapeuta</h1>
         <p>Recurso opcional. Você escolhe o período, os registros e as informações; vê uma prévia; e decide se e com quem compartilhar. <strong>Nada é enviado automaticamente.</strong></p>
         <form id="rp">
-          <section class="card"><h2>1. Período</h2>
+          <section class="card"><h2>1. Formato</h2>
+            <div class="seg" role="group" aria-label="Formato do relatório">
+              <button type="button" data-format="resumido" aria-pressed="${st.format === 'resumido'}">Resumido</button>
+              <button type="button" data-format="completo" aria-pressed="${st.format === 'completo'}">Completo</button></div>
+            <p class="muted mt mb0">${st.format === 'resumido'
+              ? '<strong>Resumido:</strong> frequência de registros, emoções predominantes, padrões que você marcou, evolução emocional e assuntos para a sessão. Não inclui o texto dos registros.'
+              : '<strong>Completo:</strong> situações, pensamentos, grau de crença, emoções, reflexões, reavaliação e plano de ação, conforme os campos que você escolher.'}</p>
+          </section>
+          <section class="card"><h2>2. Período</h2>
             <div class="seg" role="group" aria-label="Período">
               <button type="button" data-period="7" aria-pressed="${st.period === '7'}">Últimos 7 dias</button>
               <button type="button" data-period="30" aria-pressed="${st.period === '30'}">Últimos 30 dias</button>
               <button type="button" data-period="custom" aria-pressed="${st.period === 'custom'}">Personalizado</button></div>
             ${st.period === 'custom' ? `<div class="grid2 mt"><div><label for="rp-from">De</label><input type="date" id="rp-from" value="${st.from}"></div><div><label for="rp-to">Até</label><input type="date" id="rp-to" value="${st.to}"></div></div>` : ''}
           </section>
-          <section class="card"><h2>2. Registros</h2>
+          <section class="card"><h2>3. Registros</h2>
             ${recs.length ? `<div class="btn-row mb0"><button type="button" class="btn ghost small" id="all">Marcar todos</button><button type="button" class="btn ghost small" id="none">Desmarcar todos</button></div>
               <div class="sel-list">${recs.map((r) => `<label class="check"><input type="checkbox" data-rec="${r.id}" ${st.excluded.has(r.id) ? '' : 'checked'}>
                 <span><span class="muted">${fmtDateTime(r.when)}</span> ${RS.recordUtil.statusBadge(r.status)}<br>${esc(RS.truncate(RS.recordUtil.firstThought(r) || r.situacao, 100))}</span></label>`).join('')}</div>`
               : '<p class="muted mb0">Nenhum registro salvo neste período. Rascunhos não entram no relatório.</p>'}
             <label class="check mt"><input type="checkbox" id="ck-inc" ${st.includeCheckins ? 'checked' : ''}> <span>Incluir check-ins do “Meu momento” (${ckCount} no período)</span></label>
           </section>
-          <section class="card"><h2>3. Informações exibidas</h2>
+          ${st.format === 'completo' ? `<section class="card"><h2>4. Informações exibidas</h2>
             ${FIELDS.map(([k, l]) => `<label class="check"><input type="checkbox" data-field="${k}" ${st.fields[k] ? 'checked' : ''}> <span>${l}</span></label>`).join('')}
-          </section>
-          <section class="card soft"><h2><label for="rp-talk" style="font-weight:inherit;margin:0">O que gostaria de conversar com seu terapeuta na próxima sessão?</label></h2>
+          </section>` : ''}
+          <section class="card soft"><h2><label for="rp-talk" style="font-weight:inherit;margin:0">${TALK_Q}</label></h2>
             <p class="muted">Opcional. Aparece em destaque no relatório.</p>
             <textarea id="rp-talk" rows="4">${esc(st.talk)}</textarea></section>
-          <section class="card"><h2>4. Privacidade</h2>
-            <label class="check"><input type="checkbox" id="rp-name" ${st.showName ? 'checked' : ''}> <span>Mostrar meu nome no relatório</span></label>
-            <p class="muted mb0">Por padrão o relatório não traz seu nome nem e-mail. Seus textos, porém, podem conter nomes de outras pessoas, lugares ou detalhes que identificam você: revise na prévia e, se preferir, desmarque registros ou campos.</p>
+          <section class="card"><h2>Nome no relatório</h2>
+            <fieldset class="mb0"><legend class="sr-only">Nome no relatório</legend>
+            <label class="check"><input type="radio" name="nm" value="none" ${st.nameMode === 'none' ? 'checked' : ''}> <span>Nenhum nome</span></label>
+            ${RS.store.session.data.profile.name ? `<label class="check"><input type="radio" name="nm" value="preferred" ${st.nameMode === 'preferred' ? 'checked' : ''}> <span>Meu nome de preferência (${esc(RS.store.session.data.profile.name)})</span></label>` : ''}
+            <label class="check"><input type="radio" name="nm" value="custom" ${st.nameMode === 'custom' ? 'checked' : ''}> <span>Outro nome, só para este relatório</span></label>
+            ${st.nameMode === 'custom' ? `<div class="field"><label for="rp-cname" class="sr-only">Nome para este relatório</label><input id="rp-cname" type="text" maxlength="60" value="${esc(st.customName)}" placeholder="Nome para este relatório"><span class="hint">Não altera o nome do seu perfil.</span></div>` : ''}
+            </fieldset>
+            <p class="muted mb0">Ocultar o nome não garante anonimato: seus textos podem conter nomes de outras pessoas, lugares ou detalhes que identificam você. Revise na prévia e remova o que preferir. O e-mail nunca entra no relatório.</p>
           </section>
           <div class="btn-row"><button type="submit" class="btn">Pré-visualizar</button></div>
         </form>`;
@@ -277,6 +338,8 @@
       const f = root.querySelector('#rp');
       if (f) {
         f.addEventListener('click', (e) => {
+          const fm = e.target.closest('[data-format]');
+          if (fm) { st.format = fm.dataset.format; RS.app.render(); return; }
           const p = e.target.closest('[data-period]');
           if (p) { st.period = p.dataset.period; RS.app.render(); return; }
           if (e.target.id === 'all') { st.excluded.clear(); RS.app.render(); }
@@ -287,21 +350,29 @@
           if (t.dataset.rec) { if (t.checked) st.excluded.delete(t.dataset.rec); else st.excluded.add(t.dataset.rec); }
           else if (t.dataset.field) st.fields[t.dataset.field] = t.checked;
           else if (t.id === 'ck-inc') { st.includeCheckins = t.checked; }
-          else if (t.id === 'rp-name') st.showName = t.checked;
+          else if (t.name === 'nm') { st.nameMode = t.value; RS.app.render(); }
           else if (t.id === 'rp-from' || t.id === 'rp-to') { if (t.value) { st[t.id === 'rp-from' ? 'from' : 'to'] = t.value; RS.app.render(); } }
         });
-        f.addEventListener('input', (e) => { if (e.target.id === 'rp-talk') st.talk = e.target.value; });
+        f.addEventListener('input', (e) => { if (e.target.id === 'rp-talk') st.talk = e.target.value; if (e.target.id === 'rp-cname') st.customName = e.target.value; });
         f.addEventListener('submit', (e) => {
           e.preventDefault();
           if (st.period === 'custom' && st.from > st.to) { RS.toast('A data inicial precisa ser anterior à final.'); return; }
           if (!selectedRecords().length && !(st.includeCheckins && periodCheckins().length) && !st.talk.trim()) { RS.toast('Selecione ao menos um registro ou escreva o que gostaria de conversar.'); return; }
-          if (!Object.values(st.fields).some(Boolean)) { RS.toast('Escolha ao menos uma informação para exibir.'); return; }
+          if (st.format === 'completo' && !Object.values(st.fields).some(Boolean)) { RS.toast('Escolha ao menos uma informação para exibir.'); return; }
+          if (st.nameMode === 'custom' && !st.customName.trim()) { RS.toast('Escreva o nome para este relatório ou escolha “Nenhum nome”.'); return; }
           st.blocks = buildBlocks();
           go('preview');
         });
         return;
       }
       root.querySelector('#back').addEventListener('click', () => { st.pdf = null; st.blocks = null; go('form'); });
+      root.querySelector('#pv').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-rm-rec],[data-rm-ck]');
+        if (!b) return;
+        if (b.dataset.rmRec) st.excluded.add(b.dataset.rmRec);
+        if (b.dataset.rmCk) st.excludedCk.add(b.dataset.rmCk);
+        st.blocks = buildBlocks(); RS.app.render(); RS.toast('Item removido do relatório.');
+      });
       const gen = root.querySelector('#gen');
       if (gen) gen.addEventListener('click', () => {
         try { st.pdf = blocksToPDF(st.blocks); go('done'); }

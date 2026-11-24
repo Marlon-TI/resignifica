@@ -14,7 +14,7 @@ Aponte a câmera do celular para o QR code ou abra o link. Não é preciso insta
 2. Na tela inicial, toque em **"Explorar com dados de exemplo"**. Aparecem registros de 3 semanas.
 3. Veja **Minha jornada**: calendário, emoções frequentes, antes e depois da reflexão.
 4. Toque em **Mais → Compartilhar com meu terapeuta**, depois em **Pré-visualizar** e em **Gerar PDF**.
-5. Faça **um registro seu do zero** em "Registrar pensamento" e percorra as 7 etapas.
+5. Faça **um registro seu do zero** em "Registrar pensamento" e percorra as 9 etapas.
 6. Faça um **check-in** em "Como estou hoje?".
 7. Quando terminar, toque em **"Remover exemplos"** na tela inicial.
 

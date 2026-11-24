@@ -16,14 +16,14 @@
 
   const ROUTES = [
     [/^\/boas-vindas$/, V.welcome], [/^\/cadastro$/, V.signup], [/^\/entrar$/, V.login], [/^\/esqueci$/, V.forgot],
-    [/^\/ajuda-publica$/, V.helpPublic], [/^\/privacidade-publica$/, V.privacyPublic],
+    [/^\/ajuda-publica$/, V.helpPublic], [/^\/privacidade-publica$/, V.privacyPublic], [/^\/termos-publicos$/, V.termsPublic],
     [/^\/?$/, V.home],
     [/^\/momento$/, V.moment], [/^\/momento\/(?<id>[\w-]+)$/, V.moment],
     [/^\/pensamentos$/, V.thoughts], [/^\/pensamentos\/(?<id>[\w-]+)$/, V.thoughtDetail],
-    [/^\/registro\/(?<id>[\w-]+)\/(?<step>\d)$/, V.wizard],
+    [/^\/registro\/(?<id>[\w-]+)\/(?<step>\d{1,2})$/, V.wizard],
     [/^\/perspectivas$/, V.perspectives], [/^\/jornada$/, V.journey],
     [/^\/aprender$/, V.learn], [/^\/aprender\/(?<id>[\w-]+)$/, V.article],
-    [/^\/terapeuta$/, V.therapist], [/^\/perfil$/, V.profile], [/^\/privacidade$/, V.privacy], [/^\/ajuda$/, V.help],
+    [/^\/terapeuta$/, V.therapist], [/^\/perfil$/, V.profile], [/^\/privacidade$/, V.privacy], [/^\/termos$/, V.terms], [/^\/sobre$/, V.about], [/^\/ajuda$/, V.help],
   ];
 
   const app = document.getElementById('app');
@@ -50,7 +50,7 @@
             <hr style="border:0;border-top:1px solid var(--borda);margin:10px 4px">
             <a href="#/terapeuta" ${cur === 'terapeuta' ? 'aria-current="page"' : ''}>${RS.icon('share')}Compartilhar com meu terapeuta</a>
           </nav>
-          <div class="side-foot"><a class="btn secondary block small" href="#/ajuda">${RS.icon('help')} Ajuda e apoio em crises</a></div>
+          <div class="side-foot"><a class="btn ghost block small" href="#/sobre">Sobre o ReSignifica</a><a class="btn secondary block small" href="#/ajuda">${RS.icon('help')} Ajuda e apoio em crises</a></div>
         </aside>
         <div class="main">
           <header class="topbar">
@@ -73,7 +73,7 @@
     const logged = !!RS.store.session.key;
 
     if (!view.auth && !logged) { returnTo = location.hash; RS.store.hasAccounts().then((has) => { location.hash = has ? '#/entrar' : '#/boas-vindas'; }); return; }
-    if (view.auth && logged && !['/ajuda-publica', '/privacidade-publica'].includes(path)) { location.hash = '#/'; return; }
+    if (view.auth && logged && !['/ajuda-publica', '/privacidade-publica', '/termos-publicos'].includes(path)) { location.hash = '#/'; return; }
 
     const samePath = path === lastPath;
     const y = window.scrollY;
@@ -108,6 +108,7 @@
           <a href="#/terapeuta">${RS.icon('share')}Compartilhar com meu terapeuta</a>
           <a href="#/aprender">${RS.icon('learn')}Aprender</a>
           <a href="#/perfil">${RS.icon('profile')}Perfil e privacidade</a>
+          <a href="#/sobre">${RS.icon('learn')}Sobre o ReSignifica</a>
           <a href="#/ajuda">${RS.icon('help')}Ajuda e apoio em crises</a></nav>`,
         actions: [{ label: 'Fechar', value: null, kind: 'secondary' }],
       });

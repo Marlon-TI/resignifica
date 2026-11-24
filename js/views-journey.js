@@ -39,6 +39,14 @@
       });
       return Object.entries(m).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 10);
     },
+    beliefBeforeAfter(records) {
+      let n = 0; let a = 0; let d = 0;
+      records.forEach((r) => (r.crencaAntes || []).forEach((v, i) => {
+        const w = (r.crencaDepois || [])[i];
+        if (v != null && w != null && ((r.pensamentos || [])[i] || '').trim()) { n++; a += v; d += w; }
+      }));
+      return n ? { n, antes: Math.round(a / n), depois: Math.round(d / n) } : null;
+    },
     distortionFreq(records) {
       const m = {};
       records.forEach((r) => (r.distorcoes || []).forEach((id) => { m[id] = (m[id] || 0) + 1; }));
@@ -130,8 +138,9 @@
             <div class="legend"><span><i style="background:var(--salvia)"></i>Antes</span><span><i style="background:var(--link)"></i>Depois</span></div>
             ${ba.slice(0, 6).map((x) => `<p class="label mb0 mt">${esc(x.nome)} <span class="muted">(${x.n} registro${x.n > 1 ? 's' : ''})</span></p>
               ${bars([{ label: 'Antes', value: x.antes }], 100)}${bars([{ label: 'Depois', value: x.depois }], 100, 'after')}`).join('')}`
-            : `<p class="muted">Aparece quando houver ao menos ${MIN_DATA} reavaliações (etapa 6 do registro).</p>`}
-          <p class="muted mb0"><strong>Leia com cautela:</strong> emoções variam por muitos motivos. Uma intensidade menor não significa necessariamente “melhora”, e uma intensidade igual não significa que a reflexão não valeu.</p>
+            : `<p class="muted">Aparece quando houver ao menos ${MIN_DATA} reavaliações (etapa 8 do registro).</p>`}
+          ${(() => { const b = RS.stats.beliefBeforeAfter(pr); return b ? `<h3 class="mt">Grau de crença no pensamento inicial <span class="muted">(${b.n} reavaliação${b.n > 1 ? 'ões' : ''})</span></h3>${bars([{ label: 'Antes', value: b.antes }], 100)}${bars([{ label: 'Depois', value: b.depois }], 100, 'after')}` : ''; })()}
+          <p class="muted mb0"><strong>Leia com cautela:</strong> emoções variam por muitos motivos. Uma intensidade menor não significa necessariamente “melhora”, e intensidade igual ou maior após a reflexão não significa fracasso.</p>
         </section>
         <section class="card">
           <h2>Temas recorrentes nos pensamentos</h2>

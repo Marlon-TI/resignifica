@@ -166,7 +166,7 @@
       id: RS.uid(), type: 'pensamento', status: 'rascunho', step: 1, createdAt: now, updatedAt: now, when: now,
       situacao: '', contexto: '', pensamentos: [''], emocoes: [], sensacoes: '', comportamento: '',
       evidFavor: '', evidContra: '', outrasExplic: '', alguemQuerido: '', distorcoes: [],
-      alternativo: '', notas: '', persisted: false,
+      alternativo: '', planoAcao: '', crencaAntes: [50], crencaDepois: [null], notas: '', persisted: false,
     };
   }
 

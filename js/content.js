@@ -15,40 +15,28 @@
   const STEPS = [
     { n: 1, title: 'Situação', short: 'Situação' },
     { n: 2, title: 'Pensamento automático', short: 'Pensamento' },
-    { n: 3, title: 'Emoções e reações', short: 'Emoções' },
-    { n: 4, title: 'Reflexão guiada', short: 'Reflexão' },
-    { n: 5, title: 'Pensamento alternativo', short: 'Alternativo' },
-    { n: 6, title: 'Reavaliação', short: 'Reavaliação' },
-    { n: 7, title: 'Salvar e revisar', short: 'Revisar' },
+    { n: 3, title: 'Grau de crença', short: 'Crença' },
+    { n: 4, title: 'Emoções', short: 'Emoções' },
+    { n: 5, title: 'Sensações físicas', short: 'Corpo' },
+    { n: 6, title: 'Comportamento', short: 'Comportamento' },
+    { n: 7, title: 'Reflexão', short: 'Reflexão' },
+    { n: 8, title: 'Reavaliação', short: 'Reavaliação' },
+    { n: 9, title: 'Plano de ação', short: 'Plano' },
+  ];
+  const REVIEW_STEP = 10; // tela final de revisão e salvamento (não conta como etapa)
+
+  /* Banco de perguntas socráticas (revisão do piloto). Mostradas poucas por vez, sempre puláveis. */
+  const SOCRATIC = [
+    'Estou interpretando a situação ou descrevendo um fato?',
+    'Quais evidências sustentam meu pensamento? Existem evidências que não estou considerando?',
+    'Estou tentando prever o futuro ou presumindo o que outra pessoa pensa?',
+    'Estou confundindo uma possibilidade com uma certeza?',
+    'O que eu diria a alguém querido que estivesse passando por isso?',
+    'Existe uma maneira mais equilibrada de compreender o que aconteceu?',
+    'O que está sob meu controle neste momento?',
   ];
 
-  /* Perguntas socráticas progressivas, em linguagem cotidiana */
-  const SOCRATIC = [
-    { level: 'Entender o pensamento', qs: [
-      'O que exatamente esse pensamento está dizendo sobre você, sobre os outros ou sobre o futuro?',
-      'Quanto você acredita nele agora, de 0 a 100?',
-    ] },
-    { level: 'Olhar para os fatos', qs: [
-      'O que aconteceu de fato, e o que foi interpretação minha?',
-      'Que fatos apoiam esse pensamento?',
-      'Que fatos não se encaixam nele?',
-    ] },
-    { level: 'Abrir outras possibilidades', qs: [
-      'Que outras explicações poderiam existir para o que aconteceu?',
-      'Se eu estivesse num dia mais tranquilo, como veria essa situação?',
-      'Já passei por algo parecido? O que aconteceu daquela vez?',
-    ] },
-    { level: 'Pensar nas consequências', qs: [
-      'Se o pior acontecesse, como eu poderia lidar com isso?',
-      'O que é mais provável que aconteça?',
-      'Acreditar nesse pensamento me ajuda ou me atrapalha agora?',
-    ] },
-    { level: 'Olhar com gentileza', qs: [
-      'O que eu diria a uma pessoa querida que estivesse pensando isso?',
-      'O que essa pessoa querida me diria se soubesse o que estou pensando?',
-      'Daqui a um ano, como talvez eu veja essa situação?',
-    ] },
-  ];
+  const PRINCIPLE = 'O objetivo não é pensar positivo, mas aprender a pensar de maneira mais realista, flexível e funcional. Nem todo pensamento desconfortável é distorcido: algumas situações são de fato difíceis, injustas ou ameaçadoras.';
 
   /* Possíveis padrões de pensamento — o app NUNCA rotula automaticamente; o usuário escolhe se algum faz sentido. */
   const DISTORTIONS = [
@@ -70,13 +58,13 @@
       id: 'pensamentos-automaticos', title: 'Pensamentos automáticos', summary: 'Ideias rápidas que surgem sozinhas e influenciam como nos sentimos.',
       body: `
 <p>Pensamentos automáticos são interpretações rápidas que aparecem diante de uma situação, quase sem percebermos. Eles não são escolhidos: simplesmente surgem.</p>
-<p>Na Terapia Cognitivo-Comportamental (TCC), a ideia central é que <strong>não é só a situação que gera o que sentimos, mas também a forma como a interpretamos</strong>.</p>
+<p>Na Terapia Cognitivo-Comportamental (TCC), uma ideia central é que <strong>a maneira como interpretamos uma situação influencia significativamente nossas emoções e nossos comportamentos</strong>, juntamente com outros fatores, como nossas experiências, condições físicas e contexto de vida.</p>
 <h2>Um exemplo</h2>
 <p>Situação: você envia uma mensagem e não recebe resposta.</p>
 <ul><li>Pensamento: “Fiz algo errado.” → ansiedade.</li><li>Pensamento: “Deve estar ocupada.” → tranquilidade.</li></ul>
-<p>A situação é a mesma. O que muda é a interpretação.</p>
+<p>A situação é a mesma. A interpretação muda, e com ela muda também o que sentimos.</p>
 <h2>Como perceber</h2>
-<ul><li>Quando notar uma mudança no que sente, pergunte: “O que passou pela minha cabeça agora?”</li><li>Escreva com as palavras exatas, mesmo que pareçam exageradas.</li><li>Lembre: ter um pensamento não significa que ele seja verdade.</li></ul>`,
+<ul><li>Quando notar uma mudança no que sente, pergunte: “O que passou pela minha cabeça agora?”</li><li>Escreva com as palavras exatas, mesmo que pareçam exageradas.</li><li>Lembre: ter um pensamento não significa que ele seja verdade, e também não significa que seja falso. Ele é uma interpretação a ser examinada.</li></ul>`,
     },
     {
       id: 'emocoes', title: 'Emoções', summary: 'O que são, para que servem e como nomeá-las.',
@@ -117,9 +105,9 @@ ${'{DISTORTIONS}'}
       body: `
 <p>A Terapia Cognitivo-Comportamental (TCC) é uma abordagem de psicoterapia com ampla base de pesquisa. Ela trabalha a relação entre <strong>situações, pensamentos, emoções, sensações e comportamentos</strong>.</p>
 <h2>O registro de pensamentos</h2>
-<p>Uma das ferramentas mais conhecidas da TCC é o registro de pensamentos: anotar a situação, o pensamento, a emoção e, depois, examinar o pensamento com calma para construir uma visão mais equilibrada. O fluxo “Registrar pensamento” deste app segue essa lógica.</p>
+<p>Uma das ferramentas mais conhecidas da TCC é o registro de pensamentos: anotar a situação, o pensamento, o quanto se acredita nele, as emoções, as reações do corpo e o comportamento; depois, examinar o pensamento com calma, reavaliar e pensar em possíveis ações. O fluxo “Registrar pensamento” deste app segue essa lógica.</p>
 <h2>O que este app é, e o que não é</h2>
-<ul><li>É uma ferramenta educativa e de autoconhecimento.</li><li><strong>Não</strong> faz diagnóstico, <strong>não</strong> é atendimento psicológico e <strong>não</strong> substitui terapia.</li><li>Pensar de forma mais equilibrada não é “pensar positivo”. É olhar a situação de forma mais completa.</li></ul>
+<ul><li>É uma ferramenta educativa e de autoconhecimento.</li><li><strong>Não</strong> faz diagnóstico, <strong>não</strong> é atendimento psicológico e <strong>não</strong> substitui terapia.</li><li>O objetivo não é “pensar positivo”, mas aprender a pensar de maneira mais realista, flexível e funcional.</li><li>Nem todo pensamento desconfortável é distorcido: algumas situações são de fato difíceis, injustas ou ameaçadoras.</li></ul>
 <p>Se você faz terapia, pode levar seus registros para a sessão usando “Compartilhar com meu terapeuta”.</p>`,
     },
   ];
@@ -136,13 +124,52 @@ ${'{DISTORTIONS}'}
 </ul>
 <p class="muted">O ReSignifica não monitora o que você escreve e não oferece atendimento em tempo real.</p>`;
 
-  const NOTICES = [
-    'O ReSignifica é uma ferramenta <strong>educativa e de autoconhecimento</strong> baseada em princípios da Terapia Cognitivo-Comportamental.',
-    'Ele <strong>não faz diagnóstico</strong>, não oferece atendimento psicológico e <strong>não substitui terapia</strong>.',
-    'O app não monitora o que você escreve nem oferece atendimento em tempo real. Em crise, ligue para o <strong>CVV (188)</strong> ou o <strong>SAMU (192)</strong>.',
-    'Seus registros são privados e ficam protegidos por senha. Nada é compartilhado sem uma ação sua.',
-    'Seus registros não são usados para publicidade nem para treinar inteligência artificial.',
-  ];
+  /* Boas-vindas (revisão do piloto, texto de Rosália Moreira) */
+  const WELCOME = `
+<p>Nem sempre podemos mudar o que acontece, mas podemos aprender a ampliar nossa maneira de compreender o que vivemos.</p>
+<p>O ReSignifica é um espaço para você compreender seus pensamentos, reconhecer suas emoções, identificar padrões e descobrir novas perspectivas.</p>
+<p>Por meio de registros e reflexões guiadas, você poderá desenvolver um olhar mais consciente, realista e acolhedor sobre suas experiências.</p>
+<p>Você pode utilizar este espaço fazendo terapia ou não. Se desejar, também poderá compartilhar seus registros com um terapeuta de sua escolha.</p>
+<p><strong>No seu tempo. No seu ritmo. Um pensamento de cada vez.</strong></p>`;
 
-  RS.content = { EMOTIONS, MOODS, STEPS, SOCRATIC, DISTORTIONS, LEARN, CRISIS, NOTICES };
+  const NOTICE_BLOCKS = [
+    { title: 'Conhecimento que transforma', text: 'Ferramenta educativa e de autoconhecimento baseada nos princípios da Terapia Cognitivo-Comportamental.' },
+    { title: 'Cuidado com responsabilidade', text: 'Não realiza diagnósticos, não oferece atendimento psicológico e não substitui psicoterapia.' },
+    { title: 'Sua privacidade importa', text: 'Você decide quais registros deseja compartilhar. Nada é enviado sem uma ação sua.' },
+    { title: 'Quando precisar de ajuda', text: 'O aplicativo não monitora seus registros nem oferece atendimento em tempo real. Para apoio emocional, procure o CVV (188). Em emergência, ligue para o SAMU (192).' },
+  ];
+  const NOTICES = NOTICE_BLOCKS.map((n) => `<strong>${n.title}:</strong> ${n.text}`);
+
+  const TERMS = `
+<p class="card warn">Versão provisória para o piloto. Os Termos de Uso definitivos devem ser elaborados com assessoria jurídica.</p>
+<h2>Finalidade</h2>
+<p>O ReSignifica é uma ferramenta educativa e de autoconhecimento baseada nos princípios da Terapia Cognitivo-Comportamental, destinada a pessoas com 18 anos ou mais.</p>
+<h2>Limites</h2>
+<ul><li>Não realiza diagnósticos, não oferece atendimento psicológico e não substitui psicoterapia.</li>
+<li>Não monitora os registros e não oferece atendimento em tempo real. Em crise, procure o CVV (188) ou, em emergência, o SAMU (192).</li>
+<li>Padrões e gráficos são descritivos. Não são avaliação clínica.</li></ul>
+<h2>Responsabilidades do usuário</h2>
+<ul><li>Guardar a própria senha. Nesta versão de teste, ela não pode ser recuperada.</li>
+<li>Decidir o que registrar, exportar e compartilhar, e com quem.</li></ul>
+<h2>Versão de teste</h2>
+<p>Durante o piloto, recomenda-se usar dados fictícios até a validação de segurança.</p>`;
+
+  const ABOUT = `
+<h2>Propósito</h2>
+<p>Oferecer um espaço acolhedor para que adultos, fazendo terapia ou não, compreendam seus pensamentos, reconheçam suas emoções, identifiquem padrões e descubram novas perspectivas.</p>
+<p><em>Acolher sem invadir. Orientar sem impor. Estimular a reflexão sem julgar. Proteger sem retirar a autonomia.</em></p>
+<h2>Idealização e conteúdo psicológico</h2>
+<p><strong>Rosália Moreira</strong>, psicóloga clínica, Terapia Cognitivo-Comportamental. <span class="muted">CRP a confirmar antes da publicação.</span></p>
+<h2>Equipe</h2>
+<p>Desenvolvimento: Marlon.</p>
+<h2>Fundamentação</h2>
+<p>O ReSignifica se baseia em princípios da Terapia Cognitivo-Comportamental, como o registro de pensamentos, o questionamento socrático e a psicoeducação sobre emoções e padrões de pensamento.</p>
+<h2>Referências</h2>
+<ul><li>Beck, J. S. <em>Terapia Cognitivo-Comportamental: teoria e prática</em>. Artmed.</li>
+<li>Greenberger, D.; Padesky, C. A. <em>A mente vencendo o humor</em>. Artmed.</li></ul>
+<p class="muted">Lista provisória, a ser revisada pela responsável pelo conteúdo psicológico.</p>
+<h2>Limites</h2>
+<p>Ferramenta educativa e de autoconhecimento. Não realiza diagnósticos, não oferece atendimento psicológico e não substitui psicoterapia. Não monitora registros nem oferece atendimento em tempo real.</p>`;
+
+  RS.content = { WELCOME, NOTICE_BLOCKS, TERMS, ABOUT, EMOTIONS, MOODS, STEPS, REVIEW_STEP, PRINCIPLE, SOCRATIC, DISTORTIONS, LEARN, CRISIS, NOTICES };
 })(window.RS);

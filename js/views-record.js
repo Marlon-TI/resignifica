@@ -1,4 +1,4 @@
-/* Meus pensamentos: lista, detalhe e fluxo guiado de registro e reestruturação (7 etapas) */
+/* Meus pensamentos: lista, detalhe e fluxo guiado de registro e reestruturação (9 etapas + revisão) */
 'use strict';
 (function (RS) {
   const { esc, fmtDateTime, truncate } = RS;
@@ -7,7 +7,7 @@
   const STATUS = { rascunho: ['Rascunho', 'draft'], breve: ['Registro breve', 'brief'], completo: ['Com reflexão', ''] };
   const statusBadge = (s) => { const [l, c] = STATUS[s] || STATUS.rascunho; return `<span class="badge ${c}">${l}</span>`; };
   const firstThought = (r) => (r.pensamentos || []).find((p) => p && p.trim()) || '';
-  const hasReflection = (r) => !!(r.evidFavor || r.evidContra || r.outrasExplic || r.alguemQuerido || r.alternativo).toString().trim();
+  const hasReflection = (r) => [r.evidFavor, r.evidContra, r.outrasExplic, r.alguemQuerido, r.alternativo, r.planoAcao].some((x) => x && String(x).trim());
   const hasCore = (r) => !!((r.situacao || '').trim() || firstThought(r).trim());
 
   RS.recordUtil = { statusBadge, firstThought, hasReflection, STATUS };
@@ -79,6 +79,12 @@
   };
 
   /* ---------------- Detalhe ---------------- */
+  const belief = (r, i) => {
+    const a = (r.crencaAntes || [])[i]; const d = (r.crencaDepois || [])[i];
+    if (a == null) return '';
+    return ` (crença: ${a}/100${d != null ? ` → ${d}/100 após a reflexão` : ''})`;
+  };
+  RS.recordUtil.belief = belief;
   const block = (label, val) => (val && String(val).trim() ? `<dt>${label}</dt><dd>${esc(val)}</dd>` : '');
   RS.recordDetailHTML = (r) => {
     const distNames = (r.distorcoes || []).map((id) => (C.DISTORTIONS.find((d) => d.id === id) || {}).name).filter(Boolean);
@@ -87,13 +93,13 @@
       <dl class="kv">
         <dt>Quando</dt><dd>${fmtDateTime(r.when)}</dd>
         ${block('Situação', r.situacao)}${block('Contexto', r.contexto)}
-        ${thoughts.length ? `<dt>Pensamento${thoughts.length > 1 ? 's' : ''} automático${thoughts.length > 1 ? 's' : ''}</dt><dd>${thoughts.map((t) => `• ${esc(t)}`).join('\n')}</dd>` : ''}
+        ${thoughts.length ? `<dt>Pensamento${thoughts.length > 1 ? 's' : ''} automático${thoughts.length > 1 ? 's' : ''} e grau de crença</dt><dd>${(r.pensamentos || []).map((t, i) => (t && t.trim() ? `• ${esc(t)}${belief(r, i)}` : '')).filter(Boolean).join('\n')}</dd>` : ''}
         ${(r.emocoes || []).length ? `<dt>Emoções e intensidade</dt><dd>${r.emocoes.map((e) => `${esc(e.nome)}: ${e.antes}/100${e.depois != null ? ` → ${e.depois}/100 após a reflexão` : ''}`).join('\n')}</dd>` : ''}
-        ${block('Sensações físicas', r.sensacoes)}${block('Comportamento / reação', r.comportamento)}
-        ${block('Evidências a favor do pensamento', r.evidFavor)}${block('Evidências contrárias ou outras possibilidades', r.evidContra)}
-        ${block('Outras explicações', r.outrasExplic)}${block('O que eu diria a alguém querido', r.alguemQuerido)}
+        ${block('Sensações físicas', r.sensacoes)}${block('Comportamento', r.comportamento)}
+        ${block('Evidências que sustentam o pensamento', r.evidFavor)}${block('Evidências que eu não estava considerando', r.evidContra)}
+        ${block('Outras maneiras de compreender a situação', r.outrasExplic)}${block('O que eu diria a alguém querido', r.alguemQuerido)}
         ${distNames.length ? `<dt>Possíveis padrões que identifiquei</dt><dd>${esc(distNames.join(', '))}</dd>` : ''}
-        ${block('Pensamento alternativo', r.alternativo)}${block('Notas', r.notas)}
+        ${block('Forma mais equilibrada de compreender', r.alternativo)}${block('Plano de ação', r.planoAcao)}${block('Notas', r.notas)}
       </dl>`;
   };
 
@@ -109,7 +115,7 @@
           <p class="muted">Atualizado em ${fmtDateTime(r.updatedAt)}</p>
           ${RS.recordDetailHTML(r)}
           <div class="btn-row">
-            ${r.status !== 'completo' ? `<a class="btn" href="#/registro/${r.id}/${r.status === 'rascunho' ? r.step || 1 : 4}">${r.status === 'rascunho' ? 'Continuar registro' : 'Refletir sobre este registro'}</a>` : ''}
+            ${r.status !== 'completo' ? `<a class="btn" href="#/registro/${r.id}/${r.status === 'rascunho' ? r.step || 1 : 7}">${r.status === 'rascunho' ? 'Continuar registro' : 'Refletir sobre este registro'}</a>` : ''}
             <a class="btn secondary" href="#/registro/${r.id}/1">Editar</a>
             <button class="btn ghost" id="del" style="color:var(--perigo)">Excluir</button>
           </div>
@@ -146,11 +152,31 @@
     <div class="range-row"><input type="range" min="0" max="100" step="5" value="${val}" id="${id}" data-${key}="${idx}" aria-label="${esc(label)}" aria-valuetext="${val} de 100">
     <span class="val" data-out="${id}">${val}/100</span></div>`;
 
+  const ensureBelief = (r) => {
+    r.crencaAntes = r.crencaAntes || []; r.crencaDepois = r.crencaDepois || [];
+    r.pensamentos.forEach((_, i) => {
+      if (r.crencaAntes[i] == null) r.crencaAntes[i] = 50;
+      if (r.crencaDepois[i] === undefined) r.crencaDepois[i] = null;
+    });
+  };
+  const thoughtLabel = (r, i) => esc(truncate(r.pensamentos[i] || `Pensamento ${i + 1}`, 120));
+  const SCALE_EMO = '0 = ausência da emoção · 100 = intensidade máxima que você percebe';
+  const SCALE_BELIEF = '0 = não acredito nada · 100 = acredito totalmente';
+  let socIdx = 0;
+  const socraticBox = () => {
+    const qs = [C.SOCRATIC[socIdx % C.SOCRATIC.length], C.SOCRATIC[(socIdx + 1) % C.SOCRATIC.length]];
+    return `<div class="card soft" id="soc-box"><p class="label">Perguntas que podem ajudar <span class="hint" style="display:inline">(não precisa responder todas)</span></p>
+      <ul>${qs.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
+      <button type="button" class="btn ghost small" id="soc-next">Ver outras perguntas</button></div>`;
+  };
+
+  const LAST = 10; // 9 etapas + revisão final
+
   const STEP_RENDER = {
     1: (r) => `
       <p class="example">Exemplo: “Enviei uma mensagem e não recebi resposta.”</p>
       <div class="field"><label for="f-when">Quando aconteceu?</label><input type="datetime-local" id="f-when" data-when value="${RS.toLocalInput(r.when)}"></div>
-      ${ta(r, 'situacao', 'O que aconteceu?', 'Descreva a situação como uma câmera veria: fatos, sem julgamentos.', 'Ex.: Enviei uma mensagem para uma amiga e ela não respondeu.', true)}
+      ${ta(r, 'situacao', 'O que aconteceu?', 'Descreva os fatos, como uma câmera veria, sem julgamentos.', 'Ex.: Enviei uma mensagem para uma amiga e ela não respondeu.', true)}
       ${ta(r, 'contexto', 'Contexto', 'Onde você estava, com quem, o que vinha acontecendo.', '')}`,
     2: (r) => `
       <p class="example">Exemplo: “Fiz algo errado.”</p>
@@ -160,7 +186,11 @@
         <textarea id="pt-${i}" data-pt="${i}" placeholder="${i ? 'Outro pensamento' : 'Ex.: Fiz algo errado.'}">${esc(p)}</textarea>
         ${i ? `<button type="button" class="btn ghost small" data-rmpt="${i}" aria-label="Remover pensamento ${i + 1}">Remover</button>` : ''}</div>`).join('')}</div>
       <button type="button" class="btn secondary small" id="addpt">${RS.icon('plus')} Adicionar outro pensamento</button>`,
-    3: (r) => `
+    3: (r) => { ensureBelief(r); return `
+      <p>Quanto você acreditou nesse pensamento no momento em que ele surgiu?</p>
+      <p class="muted">${SCALE_BELIEF}. O grau de crença é diferente da intensidade da emoção: você pode acreditar pouco num pensamento e ainda assim sentir algo forte, ou o contrário.</p>
+      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span>${rangeRow('ca-' + i, 'Grau de crença no pensamento ' + (i + 1), r.crencaAntes[i], 'ca', i)}</div>`).join('')}`; },
+    4: (r) => `
       <p class="example">Exemplo: ansiedade 70/100.</p>
       <fieldset><legend>Quais emoções você sentiu?</legend>
         <div class="chips">${[...new Set([...C.EMOTIONS, ...r.emocoes.map((e) => e.nome)])].map((n) => `
@@ -169,36 +199,43 @@
           <input id="emo-outra" type="text" placeholder="Outra emoção" maxlength="30" style="max-width:240px">
           <button type="button" class="btn secondary small" id="emo-add">Adicionar</button></div>
       </fieldset>
-      <div id="emo-ints">${r.emocoes.length ? '<p class="label">Intensidade de cada emoção (0 = nada, 100 = máxima)</p>' : ''}
-        ${r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span>${rangeRow('ea-' + i, 'Intensidade de ' + e.nome, e.antes, 'ea', i)}</div>`).join('')}</div>
-      ${ta(r, 'sensacoes', 'Sensações físicas', 'Ex.: aperto no peito, coração acelerado.', '')}
-      ${ta(r, 'comportamento', 'Comportamento ou reação', 'O que você fez ou teve vontade de fazer?', '')}`,
-    4: (r) => `
-      <p>Agora, com calma, vamos olhar para o pensamento <strong>“${esc(truncate(firstThought(r) || '…', 120))}”</strong> de outros ângulos. Responda só o que fizer sentido; você pode pular qualquer pergunta.</p>
-      ${ta(r, 'evidFavor', 'Que evidências apoiam esse pensamento?', 'Fatos, não sensações.', '')}
-      ${ta(r, 'evidContra', 'Que evidências não se encaixam nele, ou que outras possibilidades existem?', '', 'Ex.: Ela costuma demorar para responder quando está trabalhando.')}
-      ${ta(r, 'outrasExplic', 'Que outras explicações poderiam existir?', '', 'Ex.: Ela pode estar ocupada, sem bateria, ou não viu a mensagem.')}
-      ${ta(r, 'alguemQuerido', 'O que você diria a alguém querido que estivesse pensando isso?', '', '')}
-      <details><summary>Perguntas que podem ajudar</summary>
-        ${C.SOCRATIC.map((l, i) => `<p class="mb0"><strong>${i + 1}. ${esc(l.level)}</strong></p><ul>${l.qs.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>`).join('')}
-      </details>
+      <div id="emo-ints">${r.emocoes.length ? `<p class="label">Com qual intensidade?<span class="hint">${SCALE_EMO}</span></p>` : ''}
+        ${r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span>${rangeRow('ea-' + i, 'Intensidade de ' + e.nome, e.antes, 'ea', i)}</div>`).join('')}</div>`,
+    5: (r) => `
+      <p class="example">Exemplo: aperto no peito, coração acelerado, tensão nos ombros.</p>
+      ${ta(r, 'sensacoes', 'O que você percebeu no corpo?', '', '')}`,
+    6: (r) => `
+      <p class="example">Exemplo: fiquei olhando o celular toda hora; deixei de sair com amigos.</p>
+      ${ta(r, 'comportamento', 'O que você fez ou deixou de fazer?', '', '')}`,
+    7: (r) => `
+      <div class="card soft"><p class="mb0">${esc(C.PRINCIPLE)}</p></div>
+      <p>Vamos olhar com calma para <strong>“${esc(truncate(firstThought(r) || '…', 120))}”</strong>. Responda só o que fizer sentido; você pode pular qualquer pergunta.</p>
+      ${socraticBox()}
+      ${ta(r, 'evidFavor', 'Quais evidências sustentam esse pensamento?', 'Fatos, não sensações.', '')}
+      ${ta(r, 'evidContra', 'Existem evidências que você não está considerando?', '', 'Ex.: Ela costuma demorar para responder quando está trabalhando.')}
+      ${ta(r, 'outrasExplic', 'Que outras maneiras existem de compreender a situação?', '', 'Ex.: Ela pode estar ocupada ou não ter visto a mensagem.')}
+      ${ta(r, 'alguemQuerido', 'O que você diria a alguém querido que estivesse passando por isso?', '', '')}
+      ${ta(r, 'alternativo', 'Como você poderia compreender o que aconteceu de forma mais equilibrada?', 'Com as suas palavras. Não precisa ser positivo; o objetivo é uma visão mais realista e flexível.', 'Ex.: Não receber resposta não prova que fiz algo errado; existem outras explicações.')}
       <details><summary>Algum destes padrões aparece aqui? (opcional)</summary>
-        <p class="muted">Todo mundo tem esses padrões às vezes. Marque só se você achar que faz sentido; o app não identifica nada automaticamente.</p>
+        <p class="muted">Todo mundo tem esses padrões às vezes, e nem todo pensamento desconfortável é um deles. Marque só se você achar que faz sentido; o app não identifica nada automaticamente.</p>
         ${C.DISTORTIONS.map((d) => `<label class="check"><input type="checkbox" data-dist="${d.id}" ${r.distorcoes.includes(d.id) ? 'checked' : ''}>
           <span><strong>${esc(d.name)}</strong>: ${esc(d.desc)} <span class="muted">${esc(d.ex)}</span></span></label>`).join('')}
       </details>`,
-    5: (r) => `
-      <p class="example">Exemplo: “Não receber resposta não prova que fiz algo errado; existem outras explicações.”</p>
-      <p>Considerando o que você refletiu, como você poderia ver essa situação de um jeito mais equilibrado? <strong>Não precisa ser positivo</strong>: o objetivo é uma visão mais completa, com as suas palavras.</p>
-      ${r.evidContra || r.outrasExplic ? `<div class="card soft"><p class="label">O que você escreveu na reflexão</p>${r.evidContra ? `<p>${esc(r.evidContra)}</p>` : ''}${r.outrasExplic ? `<p class="mb0">${esc(r.outrasExplic)}</p>` : ''}</div>` : ''}
-      ${ta(r, 'alternativo', 'Pensamento alternativo', '', '')}`,
-    6: (r) => `
-      <p>Depois de refletir, como estão as emoções agora? Esta etapa é opcional.</p>
-      <p class="muted">Tudo bem se a intensidade não mudar. Às vezes a emoção leva tempo, e registrar já é um passo importante.</p>
+    8: (r) => { ensureBelief(r); return `
+      <p>Depois de refletir, quanto você acredita no pensamento inicial agora? E como se sente? Esta etapa é opcional.</p>
+      <p class="muted">Tudo bem se nada mudar, ou se a intensidade aumentar. Isso não significa fracasso: às vezes a situação é mesmo difícil, e registrar já é um passo importante.</p>
+      <h3>Grau de crença agora <span class="hint" style="display:inline">(${SCALE_BELIEF})</span></h3>
+      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span> <span class="muted">(antes: ${r.crencaAntes[i]}/100)</span>
+        ${r.crencaDepois[i] == null ? `<div><button type="button" class="btn secondary small mt" data-rate-c="${i}">Avaliar agora</button></div>` : rangeRow('cd-' + i, 'Grau de crença agora no pensamento ' + (i + 1), r.crencaDepois[i], 'cd', i)}</div>`).join('')}
+      <h3 class="mt">Como você se sente agora <span class="hint" style="display:inline">(${SCALE_EMO})</span></h3>
       ${r.emocoes.length ? r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span> <span class="muted">(antes: ${e.antes}/100)</span>
         ${e.depois == null ? `<div><button type="button" class="btn secondary small mt" data-rate="${i}">Avaliar agora</button></div>` : rangeRow('ed-' + i, 'Intensidade de ' + e.nome + ' agora', e.depois, 'ed', i)}</div>`).join('')
-        : '<div class="empty">Nenhuma emoção registrada na etapa 3.</div>'}`,
-    7: (r) => `
+        : '<div class="empty">Nenhuma emoção registrada na etapa 4.</div>'}`; },
+    9: (r) => `
+      <p>A partir dessa perspectiva, existe algo que você pode fazer?</p>
+      <p class="muted">Pode ser algo pequeno, como conversar com alguém, buscar uma informação ou cuidar de si. Também é válido não fazer nada agora.</p>
+      ${ta(r, 'planoAcao', 'Plano de ação', '', 'Ex.: Esperar até amanhã e, se ela não responder, perguntar se está tudo bem.')}`,
+    10: (r) => `
       <p>Confira seu registro. Você pode salvar agora ou continuar depois.</p>
       <div class="card">${RS.recordDetailHTML(r)}</div>
       ${ta(r, 'notas', 'Notas', 'Algo mais que queira lembrar?', '')}`,
@@ -209,22 +246,22 @@
     render: ({ id, step }) => {
       const r = getWorking(id);
       if (!r) return `<div class="empty">Registro não encontrado. <a href="#/pensamentos">Voltar</a></div>`;
-      const n = Math.min(7, Math.max(1, +step || 1));
-      const s = C.STEPS[n - 1];
+      const n = Math.min(LAST, Math.max(1, +step || 1));
+      const total = C.STEPS.length;
       return `
         <h1 class="sr-only">Registrar pensamento</h1>
         <nav class="steps" aria-label="Etapas">${C.STEPS.map((x) => `<span class="${x.n < n ? 'done' : x.n === n ? 'now' : ''}" title="${x.n}. ${x.title}"></span>`).join('')}</nav>
-        <div class="step-label">Etapa ${n} de 7</div>
-        <h2>${n}. ${s.title}</h2>
+        <div class="step-label">${n <= total ? `Etapa ${n} de ${total}` : 'Revisão final'}</div>
+        <h2>${n <= total ? `${n}. ${C.STEPS[n - 1].title}` : 'Revisar e salvar'}</h2>
         <form id="wz" autocomplete="off">${STEP_RENDER[n](r)}</form>
         <p class="muted" id="autosave" aria-live="polite">${r.persisted === false ? 'O rascunho é salvo automaticamente enquanto você escreve.' : 'Rascunho salvo automaticamente.'}</p>
         <div class="wizard-actions">
           <div class="btn-row">${n > 1 ? `<button type="button" class="btn secondary" data-go="${n - 1}">Voltar</button>` : `<a class="btn secondary" href="#/pensamentos">Cancelar</a>`}</div>
           <div class="btn-row">
-            ${n < 7 ? `<button type="button" class="btn ghost" id="later">Continuar depois</button>` : ''}
-            ${n === 3 ? `<button type="button" class="btn secondary" id="brief">Salvar sem reflexão</button>` : ''}
-            ${n >= 4 && n <= 6 ? `<button type="button" class="btn secondary" data-go="${n + 1}">Pular etapa</button>` : ''}
-            ${n < 7 ? `<button type="button" class="btn" data-go="${n + 1}">Continuar</button>` : `
+            ${n < LAST ? `<button type="button" class="btn ghost" id="later">Continuar depois</button>` : ''}
+            ${n >= 4 && n <= 6 ? `<button type="button" class="btn secondary" id="brief">Salvar sem reflexão</button>` : ''}
+            ${n >= 3 && n < LAST ? `<button type="button" class="btn secondary" data-go="${n + 1}">Pular etapa</button>` : ''}
+            ${n < LAST ? `<button type="button" class="btn" data-go="${n + 1}">${n === total ? 'Revisar' : 'Continuar'}</button>` : `
               <button type="button" class="btn secondary" id="later">Salvar como rascunho</button>
               <button type="button" class="btn" id="finish">Salvar registro</button>`}
           </div>
@@ -233,7 +270,7 @@
     mount: (root, { id, step }) => {
       const r = id === 'novo' ? pending : getWorking(id);
       if (!r) return;
-      const n = Math.min(7, Math.max(1, +step || 1));
+      const n = Math.min(LAST, Math.max(1, +step || 1));
       if (id === 'novo') history.replaceState(null, '', `#/registro/${r.id}/${n}`);
       const form = root.querySelector('#wz');
       const status = root.querySelector('#autosave');
@@ -245,6 +282,13 @@
         if (t.dataset.f) { r[t.dataset.f] = t.value; changed(); }
         else if (t.hasAttribute('data-when')) { if (t.value) { r.when = new Date(t.value).toISOString(); changed(); } }
         else if (t.dataset.pt != null) { r.pensamentos[+t.dataset.pt] = t.value; changed(); }
+        else if (t.dataset.ca != null || t.dataset.cd != null) {
+          ensureBelief(r);
+          if (t.dataset.ca != null) r.crencaAntes[+t.dataset.ca] = +t.value; else r.crencaDepois[+t.dataset.cd] = +t.value;
+          t.setAttribute('aria-valuetext', `${t.value} de 100`);
+          root.querySelector(`[data-out="${t.id}"]`).textContent = `${t.value}/100`;
+          changed();
+        }
         else if (t.dataset.ea != null || t.dataset.ed != null) {
           const i = +(t.dataset.ea != null ? t.dataset.ea : t.dataset.ed);
           r.emocoes[i][t.dataset.ea != null ? 'antes' : 'depois'] = +t.value;
@@ -268,9 +312,12 @@
           changed(); rerender(); focusAfter(`[data-emo="${cssq(name)}"]`); return;
         }
         if (e.target.id === 'emo-add') { addCustom(); return; }
-        if (e.target.id === 'addpt') { r.pensamentos.push(''); changed(); rerender(); focusAfter(`#pt-${r.pensamentos.length - 1}`); return; }
+        if (e.target.id === 'addpt') { r.pensamentos.push(''); ensureBelief(r); changed(); rerender(); focusAfter(`#pt-${r.pensamentos.length - 1}`); return; }
         const rm = e.target.closest('[data-rmpt]');
-        if (rm) { r.pensamentos.splice(+rm.dataset.rmpt, 1); changed(); rerender(); return; }
+        if (rm) { const k = +rm.dataset.rmpt; ensureBelief(r); r.pensamentos.splice(k, 1); r.crencaAntes.splice(k, 1); r.crencaDepois.splice(k, 1); changed(); rerender(); return; }
+        if (e.target.id === 'soc-next') { socIdx = (socIdx + 2) % C.SOCRATIC.length; root.querySelector('#soc-box').outerHTML = socraticBox(); focusAfter('#soc-next'); return; }
+        const rc = e.target.closest('[data-rate-c]');
+        if (rc) { ensureBelief(r); const k = +rc.dataset.rateC; r.crencaDepois[k] = r.crencaAntes[k]; changed(); rerender(); focusAfter(`#cd-${k}`); return; }
         const rate = e.target.closest('[data-rate]');
         if (rate) { const em = r.emocoes[+rate.dataset.rate]; em.depois = em.antes; changed(); rerender(); focusAfter(`#ed-${rate.dataset.rate}`); }
       });

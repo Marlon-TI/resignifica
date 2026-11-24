@@ -27,7 +27,7 @@ body {
   background: var(--fundo);
   color: var(--texto);
   font-family: var(--fonte);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.55;
 }
 h1, h2, h3 { line-height: 1.25; margin: 0 0 .5em; font-weight: 650; }
@@ -140,9 +140,9 @@ small, .muted { color: var(--texto-suave); }
 /* ---------- Formulários ---------- */
 label, .label { display: block; font-weight: 600; margin: 0 0 6px; }
 .hint { display: block; font-weight: 400; color: var(--texto-suave); font-size: .92rem; margin-top: 2px; }
-.field { margin-bottom: 18px; }
+.field { margin-bottom: 22px; }
 input[type=text], input[type=email], input[type=password], input[type=date], input[type=datetime-local], input[type=time], input[type=search], textarea, select {
-  width: 100%; font: inherit; color: var(--texto); background: var(--superficie); border: 1px solid #A9C7B4; border-radius: 10px;
+  width: 100%; font: inherit; color: var(--texto); background: var(--superficie); border: 1.5px solid #6E9580; border-radius: 10px;
   padding: 11px 12px; min-height: 46px;
 }
 textarea { min-height: 96px; resize: vertical; }
@@ -282,3 +282,9 @@ a.item:hover { border-color: var(--salvia); }
   .sidebar, .topbar, .bottomnav, .no-print { display: none !important; }
   body { background: #fff; }
 }
+
+/* Revisão do piloto: acessibilidade visual */
+.chip { border-color: #8FB39F; }
+.check input[type=radio] { width: 22px; height: 22px; margin: 1px 0 0; flex: 0 0 22px; accent-color: var(--link); }
+.card h3 { margin-top: 0; }
+.hint { font-size: .95rem; }

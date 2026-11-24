@@ -1,5 +1,5 @@
 /* Service worker: guarda só os arquivos do app para funcionar offline. Nunca armazena dados do usuário. */
-const CACHE = 'resignifica-v0.1.1';
+const CACHE = 'resignifica-v0.2.0';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/styles.css',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'vendor/jspdf.umd.min.js',
@@ -12,7 +12,11 @@ self.addEventListener('activate', (e) => {
 });
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((r) => r || fetch(e.request)));
+  // Rede primeiro (versão de teste muda com frequência); cache só quando offline
+  e.respondWith(fetch(e.request).then((res) => {
+    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+    return res;
+  }).catch(() => caches.match(e.request, { ignoreSearch: true })));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
