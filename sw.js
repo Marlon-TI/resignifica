@@ -1,5 +1,5 @@
 /* Service worker: guarda só os arquivos do app para funcionar offline. Nunca armazena dados do usuário. */
-const CACHE = 'resignifica-v0.2.0';
+const CACHE = 'resignifica-v0.2.1';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/styles.css',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'vendor/jspdf.umd.min.js',

@@ -51,6 +51,7 @@
   ];
 
   RS.demo = {
+    hasReal: () => !!RS.store.session.data && (RS.store.records().some((r) => !r.demo && r.persisted !== false) || RS.store.checkins().some((c) => !c.demo)),
     has: () => !!RS.store.session.data && (RS.store.records().some((r) => r.demo) || RS.store.checkins().some((c) => c.demo)),
     load() {
       const d = RS.store.session.data;

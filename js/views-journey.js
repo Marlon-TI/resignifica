@@ -57,15 +57,16 @@
   const bars = (rows, max, cls = '') => `<div class="bars">${rows.map((r) => `
     <div class="bar"><span>${esc(r.label)}</span><span class="track" role="img" aria-label="${esc(r.label)}: ${r.value}${r.suffix || ''}"><span class="fill ${cls}" style="width:${Math.max(2, Math.round((r.value / max) * 100))}%"></span></span><span class="n">${r.value}${r.suffix || ''}</span></div>`).join('')}</div>`;
 
-  let cal = null; let sel = null; let period = 30;
+  let cal = null; let sel = null; let period = 30; let showDemo = null;
 
   RS.views.journey = {
     title: 'Minha jornada', nav: 'jornada',
     render: () => {
       const now = new Date();
       if (!cal) cal = { y: now.getFullYear(), m: now.getMonth() };
-      const recs = RS.store.records().filter((r) => r.status !== 'rascunho');
-      const cks = RS.store.checkins();
+      const incDemo = showDemo == null ? !RS.demo.hasReal() : showDemo;
+      const recs = RS.store.records().filter((r) => r.status !== 'rascunho' && (incDemo || !r.demo));
+      const cks = RS.store.checkins().filter((c) => incDemo || !c.demo);
 
       /* Calendário */
       const byDay = {};
@@ -103,6 +104,7 @@
       return `
         <h1>Minha jornada</h1>
         <p class="muted">Uma visão dos seus registros ao longo do tempo.</p>
+        ${RS.demo.has() ? `<label class="check"><input type="checkbox" id="j-demo" ${incDemo ? 'checked' : ''}> <span>Incluir dados de exemplo${RS.demo.hasReal() ? '' : ' (você ainda não tem registros próprios)'}</span></label>` : ''}
         <section class="card">
           <div class="btn-row between"><button type="button" class="btn secondary small" data-mo="-1" aria-label="Mês anterior">‹</button>
             <h2 class="mb0" style="text-transform:capitalize">${MONTHS[cal.m]} ${cal.y}</h2>
@@ -135,7 +137,7 @@
         <section class="card">
           <h2>Intensidade antes e depois da reflexão</h2>
           ${ba.reduce((s, x) => s + x.n, 0) >= MIN_DATA ? `
-            <div class="legend"><span><i style="background:var(--salvia)"></i>Antes</span><span><i style="background:var(--link)"></i>Depois</span></div>
+            <div class="legend"><span><i style="background:var(--salvia)"></i>Antes</span><span><i style="background:#8C9A94"></i>Depois</span></div>
             ${ba.slice(0, 6).map((x) => `<p class="label mb0 mt">${esc(x.nome)} <span class="muted">(${x.n} registro${x.n > 1 ? 's' : ''})</span></p>
               ${bars([{ label: 'Antes', value: x.antes }], 100)}${bars([{ label: 'Depois', value: x.depois }], 100, 'after')}`).join('')}`
             : `<p class="muted">Aparece quando houver ao menos ${MIN_DATA} reavaliações (etapa 8 do registro).</p>`}
@@ -158,6 +160,7 @@
         const p = e.target.closest('[data-p]');
         if (p) { period = +p.dataset.p; RS.app.render(); }
       });
+      root.addEventListener('change', (e) => { if (e.target.id === 'j-demo') { showDemo = e.target.checked; RS.app.render(); } });
     },
   };
 
@@ -171,5 +174,5 @@
     return esc(parts.join(' '));
   }
 
-  RS.journeyReset = () => { cal = null; sel = null; period = 30; };
+  RS.journeyReset = () => { cal = null; sel = null; period = 30; showDemo = null; };
 })(window.RS);

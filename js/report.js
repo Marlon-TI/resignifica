@@ -19,7 +19,7 @@
     st = {
       stage: 'form', format: 'resumido', period: '30', from: RS.toDateInput(RS.daysAgo(30)), to: RS.toDateInput(new Date()),
       excluded: new Set(), excludedCk: new Set(), fields: Object.fromEntries(FIELDS.map(([k]) => [k, true])),
-      includeCheckins: false, nameMode: 'none', customName: '', talk: '', pdf: null, blocks: null,
+      includeDemo: !RS.demo.hasReal(), includeCheckins: false, nameMode: 'none', customName: '', talk: '', pdf: null, blocks: null,
     };
   };
 
@@ -30,9 +30,9 @@
     return { from, to, label: 'Período personalizado' };
   };
   const inRange = (iso, r) => { const d = new Date(iso); return d >= r.from && d <= r.to; };
-  const periodRecords = () => { const r = range(); return RS.store.records().filter((x) => x.status !== 'rascunho' && inRange(x.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
+  const periodRecords = () => { const r = range(); return RS.store.records().filter((x) => x.status !== 'rascunho' && (st.includeDemo || !x.demo) && inRange(x.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
   const selectedRecords = () => periodRecords().filter((x) => !st.excluded.has(x.id));
-  const periodCheckins = () => { const r = range(); return RS.store.checkins().filter((c) => inRange(c.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
+  const periodCheckins = () => { const r = range(); return RS.store.checkins().filter((c) => (st.includeDemo || !c.demo) && inRange(c.when, r)).sort((a, b) => new Date(a.when) - new Date(b.when)); };
   const selectedCheckins = () => (st.includeCheckins ? periodCheckins().filter((c) => !st.excludedCk.has(c.id)) : []);
   const reportName = () => {
     if (st.nameMode === 'preferred') return (RS.store.session.data.profile.name || '').trim();
@@ -119,7 +119,7 @@
           }
           if (F.alternativos && x.alternativo) rows.push(['Forma mais equilibrada de compreender', x.alternativo]);
           if (F.reavaliacao) {
-            const cr = (x.crencaDepois || []).map((v, k) => (v != null && (x.pensamentos[k] || '').trim() ? `de ${x.crencaAntes[k]} para ${v}` : '')).filter(Boolean);
+            const cr = (x.crencaDepois || []).map((v, k) => (v != null && (x.pensamentos[k] || '').trim() ? (x.crencaAntes[k] != null ? `de ${x.crencaAntes[k]} para ${v}` : `${v}/100`) : '')).filter(Boolean);
             if (cr.length) rows.push(['Grau de crença após a reflexão', cr.join(' · ')]);
             const ev = x.emocoes.filter((e) => e.depois != null);
             if (ev.length) rows.push(['Emoções após a reflexão', ev.map((e) => `${e.nome}: de ${e.antes} para ${e.depois}`).join(' · ')]);
@@ -292,6 +292,7 @@
       return `
         <h1>Compartilhar com meu terapeuta</h1>
         <p>Recurso opcional. Você escolhe o período, os registros e as informações; vê uma prévia; e decide se e com quem compartilhar. <strong>Nada é enviado automaticamente.</strong></p>
+        <div class="card soft"><p class="mb0">Combine previamente com seu terapeuta como e quando os registros serão utilizados. O compartilhamento não garante leitura ou resposta imediata e não substitui o atendimento em situações de emergência.</p></div>
         <form id="rp">
           <section class="card"><h2>1. Formato</h2>
             <div class="seg" role="group" aria-label="Formato do relatório">
@@ -313,6 +314,7 @@
               <div class="sel-list">${recs.map((r) => `<label class="check"><input type="checkbox" data-rec="${r.id}" ${st.excluded.has(r.id) ? '' : 'checked'}>
                 <span><span class="muted">${fmtDateTime(r.when)}</span> ${RS.recordUtil.statusBadge(r.status)}<br>${esc(RS.truncate(RS.recordUtil.firstThought(r) || r.situacao, 100))}</span></label>`).join('')}</div>`
               : '<p class="muted mb0">Nenhum registro salvo neste período. Rascunhos não entram no relatório.</p>'}
+            ${RS.demo.has() ? `<label class="check mt"><input type="checkbox" id="rp-demo" ${st.includeDemo ? 'checked' : ''}> <span>Incluir dados de exemplo</span></label>` : ''}
             <label class="check mt"><input type="checkbox" id="ck-inc" ${st.includeCheckins ? 'checked' : ''}> <span>Incluir check-ins do “Meu momento” (${ckCount} no período)</span></label>
           </section>
           ${st.format === 'completo' ? `<section class="card"><h2>4. Informações exibidas</h2>
@@ -350,6 +352,7 @@
           if (t.dataset.rec) { if (t.checked) st.excluded.delete(t.dataset.rec); else st.excluded.add(t.dataset.rec); }
           else if (t.dataset.field) st.fields[t.dataset.field] = t.checked;
           else if (t.id === 'ck-inc') { st.includeCheckins = t.checked; }
+          else if (t.id === 'rp-demo') { st.includeDemo = t.checked; RS.app.render(); }
           else if (t.name === 'nm') { st.nameMode = t.value; RS.app.render(); }
           else if (t.id === 'rp-from' || t.id === 'rp-to') { if (t.value) { st[t.id === 'rp-from' ? 'from' : 'to'] = t.value; RS.app.render(); } }
         });

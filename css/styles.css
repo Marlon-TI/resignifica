@@ -222,7 +222,7 @@ a.item:hover { border-color: var(--salvia); }
 .bar { display: grid; grid-template-columns: 110px 1fr 48px; gap: 10px; align-items: center; margin: 6px 0; font-size: .93rem; }
 .bar .track { display: block; background: var(--salvia-suave); border-radius: 6px; height: 14px; overflow: hidden; }
 .bar .fill { display: block; background: var(--salvia); height: 100%; border-radius: 6px; }
-.bar .fill.after { background: var(--link); }
+.bar .fill.after { background: #8C9A94; }
 .bar .n { text-align: right; font-variant-numeric: tabular-nums; }
 .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .stat { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; padding: 12px; text-align: center; }

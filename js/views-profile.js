@@ -47,11 +47,11 @@
           <p>Seus registros ficam neste aparelho, criptografados com a sua senha. Nada é compartilhado sem uma ação sua.</p>
           <p class="muted">${data.records.filter((r) => r.persisted !== false).length} registro(s) de pensamento · ${data.checkins.length} check-in(s)</p>
           <div class="btn-row">
-            <button class="btn secondary" id="exp">Exportar meus dados (JSON)</button>
+            <button class="btn secondary" id="exp">Exportar cópia legível (JSON)</button>
             <a class="btn ghost" href="#/privacidade">Política de Privacidade</a>
             <a class="btn ghost" href="#/termos">Termos de Uso</a>
           </div>
-          <p class="muted mt mb0">A exportação gera um arquivo <strong>sem criptografia</strong>, legível por qualquer pessoa que tenha acesso a ele. Guarde-o em local seguro.</p>
+          <p class="muted mt mb0">A exportação gera um arquivo <strong>sem criptografia</strong>, legível por qualquer pessoa que tenha acesso a ele. Guarde-o em local seguro. <strong>Não é um backup restaurável:</strong> nesta versão, o arquivo não pode ser importado de volta no app. O PDF para terapeuta também é só um relatório de leitura.</p>
         </section>
 
         <section class="card danger"><h2>Excluir</h2>
@@ -66,7 +66,7 @@
           <p>O ReSignifica é uma ferramenta educativa e de autoconhecimento. Não faz diagnóstico, não oferece atendimento psicológico e não substitui terapia.</p>
           <a class="btn secondary" href="#/ajuda">${RS.icon('help')} Ajuda e apoio em crises</a>
         </section>
-        <p class="muted">ReSignifica · versão piloto 0.2 · briefing v1.0 + revisão do piloto (24/11/2026) · <a href="#/sobre">Sobre o ReSignifica</a></p>`;
+        <p class="muted">ReSignifica · versão piloto 0.2.1 · briefing v1.0 + revisão do piloto (24/11/2026) · <a href="#/sobre">Sobre o ReSignifica</a></p>`;
     },
     mount: (root) => {
       const { data } = RS.store.session;

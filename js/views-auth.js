@@ -72,7 +72,7 @@
             <div class="field"><label for="su-pw2">Confirme a senha</label>
               <input id="su-pw2" name="pw2" type="password" autocomplete="new-password" required></div>
             <div class="card warn">
-              <p class="mb0"><strong>Importante:</strong> seus registros são criptografados com a sua senha e ficam guardados neste aparelho. <strong>Se esquecer a senha, não será possível recuperar os registros.</strong> Faça exportações periódicas em Perfil e privacidade.</p>
+              <p class="mb0"><strong>Importante:</strong> seus registros são criptografados com a sua senha e ficam guardados neste aparelho. <strong>Se esquecer a senha, não será possível recuperar os registros.</strong></p><p class="mb0 mt"><strong>Não há backup restaurável nesta versão de teste:</strong> a exportação gera uma cópia legível dos registros e o relatório gera um PDF, mas nenhum dos dois pode ser importado de volta no app. Trocar de aparelho ou limpar os dados do navegador apaga os registros.</p>
             </div>
             <label class="check"><input type="checkbox" name="ok" required> <span>Entendi como meus dados são guardados.</span></label>
             <p id="su-err" class="muted" role="alert" style="color:var(--perigo)"></p>

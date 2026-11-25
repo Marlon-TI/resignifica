@@ -92,7 +92,7 @@
         </form>
         <p class="muted">${rem.enabled ? `Lembrete ativo às ${esc(rem.time)}.` : 'Lembretes estão desativados.'} <a href="#/perfil#lembretes">Configurar lembretes</a></p>
         <h2>Momentos anteriores</h2>
-        ${list.length ? `<div class="list">${list.map((x) => `<a class="item" href="#/momento/${x.id}"><div class="meta"><span>${fmtDateTime(x.when)}</span>${x.humor ? `<span class="badge">${esc(moodLabel(x.humor))}</span>` : ''}</div>
+        ${list.length ? `<div class="list">${list.map((x) => `<a class="item" href="#/momento/${x.id}"><div class="meta"><span>${fmtDateTime(x.when)}</span>${x.humor ? `<span class="badge">${esc(moodLabel(x.humor))}</span>` : ''}${x.demo ? '<span class="badge brief">Exemplo</span>' : ''}</div>
           <div class="text">${x.emocoes.length ? x.emocoes.map((e) => `${esc(e.nome)} ${e.intensidade}`).join(' · ') : `<span class="muted">${x.naoIdentifica ? 'Não consegui identificar o que sentia' : 'Sem emoções marcadas'}</span>`}</div>
           ${x.notas ? `<div class="muted">${esc(truncate(x.notas, 120))}</div>` : ''}</a>`).join('')}</div>` : '<div class="empty">Seus check-ins aparecerão aqui.</div>'}`;
     },
@@ -154,14 +154,14 @@
       const pend = RS.store.records().filter((r) => r.status !== 'completo').sort((a, b) => new Date(b.when) - new Date(a.when));
       return `
         <h1>Outras perspectivas</h1>
-        <p>Pensamentos automáticos são interpretações, não fatos. Aqui você pode olhar para eles com calma, por outros ângulos, e construir uma compreensão mais equilibrada com as suas palavras.</p>
+        <p>Pensamentos automáticos são interpretações que podem ou não corresponder aos fatos. Aqui você pode olhar para eles com calma, por outros ângulos, e construir uma compreensão mais equilibrada com as suas palavras.</p>
         <div class="card soft"><p class="mb0">${esc(C.PRINCIPLE)}</p></div>
         <section class="card">
           <h2>Registros aguardando reflexão</h2>
           ${pend.length ? pend.slice(0, 10).map((r) => `
             <div class="item"><div class="meta"><span>${fmtDateTime(r.when)}</span>${RS.recordUtil.statusBadge(r.status)}</div>
               <div class="text">${esc(truncate(RS.recordUtil.firstThought(r) || r.situacao || 'Registro iniciado', 140))}</div>
-              <div class="btn-row mt"><a class="btn small" href="#/registro/${r.id}/${r.status === 'rascunho' && (r.step || 1) < 7 ? r.step || 1 : 7}">Refletir agora</a></div></div>`).join('')
+              <div class="btn-row mt"><a class="btn small" href="#/registro/${r.id}/${r.status === 'rascunho' && (r.step || 1) < 7 ? r.step || 1 : 7}">Refletir quando quiser</a></div></div>`).join('')
             : `<div class="empty">Nenhum registro aguardando reflexão. <a href="#/registro/novo/1">Registrar um pensamento</a></div>`}
         </section>
         <section class="card">

@@ -15,7 +15,7 @@
   /* Item de lista reutilizável */
   RS.recordItem = (r) => `
     <a class="item" href="#/pensamentos/${r.id}">
-      <div class="meta"><span>${fmtDateTime(r.when)}</span>${statusBadge(r.status)}
+      <div class="meta"><span>${fmtDateTime(r.when)}</span>${statusBadge(r.status)}${r.demo ? '<span class="badge brief">Exemplo</span>' : ''}
         ${(r.emocoes || []).slice(0, 3).map((e) => `<span>${esc(e.nome)} ${e.antes}</span>`).join(' · ')}</div>
       <div class="text">${esc(truncate(firstThought(r) || r.situacao || 'Sem texto ainda', 140))}</div>
       ${r.situacao && firstThought(r) ? `<div class="muted">${esc(truncate(r.situacao, 110))}</div>` : ''}
@@ -81,7 +81,8 @@
   /* ---------------- Detalhe ---------------- */
   const belief = (r, i) => {
     const a = (r.crencaAntes || [])[i]; const d = (r.crencaDepois || [])[i];
-    if (a == null) return '';
+    if (a == null && d == null) return '';
+    if (a == null) return ` (crença após a reflexão: ${d}/100)`;
     return ` (crença: ${a}/100${d != null ? ` → ${d}/100 após a reflexão` : ''})`;
   };
   RS.recordUtil.belief = belief;
@@ -155,7 +156,7 @@
   const ensureBelief = (r) => {
     r.crencaAntes = r.crencaAntes || []; r.crencaDepois = r.crencaDepois || [];
     r.pensamentos.forEach((_, i) => {
-      if (r.crencaAntes[i] == null) r.crencaAntes[i] = 50;
+      if (r.crencaAntes[i] === undefined) r.crencaAntes[i] = null; // sem resposta não vira número
       if (r.crencaDepois[i] === undefined) r.crencaDepois[i] = null;
     });
   };
@@ -189,7 +190,9 @@
     3: (r) => { ensureBelief(r); return `
       <p>Quanto você acreditou nesse pensamento no momento em que ele surgiu?</p>
       <p class="muted">${SCALE_BELIEF}. O grau de crença é diferente da intensidade da emoção: você pode acreditar pouco num pensamento e ainda assim sentir algo forte, ou o contrário.</p>
-      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span>${rangeRow('ca-' + i, 'Grau de crença no pensamento ' + (i + 1), r.crencaAntes[i], 'ca', i)}</div>`).join('')}`; },
+      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span>${r.crencaAntes[i] == null
+        ? `<div><button type="button" class="btn secondary small mt" data-set-ca="${i}">Registrar grau de crença</button> <span class="muted">ou pule esta etapa</span></div>`
+        : rangeRow('ca-' + i, 'Grau de crença no pensamento ' + (i + 1), r.crencaAntes[i], 'ca', i)}</div>`).join('')}`; },
     4: (r) => `
       <p class="example">Exemplo: ansiedade 70/100.</p>
       <fieldset><legend>Quais emoções você sentiu?</legend>
@@ -211,7 +214,7 @@
       <div class="card soft"><p class="mb0">${esc(C.PRINCIPLE)}</p></div>
       <p>Vamos olhar com calma para <strong>“${esc(truncate(firstThought(r) || '…', 120))}”</strong>. Responda só o que fizer sentido; você pode pular qualquer pergunta.</p>
       ${socraticBox()}
-      ${ta(r, 'evidFavor', 'Quais evidências sustentam esse pensamento?', 'Fatos, não sensações.', '')}
+      ${ta(r, 'evidFavor', 'Que fatos ou acontecimentos sustentam esse pensamento?', 'Suas emoções também merecem atenção, mas não são, por si só, prova da interpretação.', '')}
       ${ta(r, 'evidContra', 'Existem evidências que você não está considerando?', '', 'Ex.: Ela costuma demorar para responder quando está trabalhando.')}
       ${ta(r, 'outrasExplic', 'Que outras maneiras existem de compreender a situação?', '', 'Ex.: Ela pode estar ocupada ou não ter visto a mensagem.')}
       ${ta(r, 'alguemQuerido', 'O que você diria a alguém querido que estivesse passando por isso?', '', '')}
@@ -224,19 +227,21 @@
     8: (r) => { ensureBelief(r); return `
       <p>Depois de refletir, quanto você acredita no pensamento inicial agora? E como se sente? Esta etapa é opcional.</p>
       <p class="muted">Tudo bem se nada mudar, ou se a intensidade aumentar. Isso não significa fracasso: às vezes a situação é mesmo difícil, e registrar já é um passo importante.</p>
-      <h3>Grau de crença agora <span class="hint" style="display:inline">(${SCALE_BELIEF})</span></h3>
-      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span> <span class="muted">(antes: ${r.crencaAntes[i]}/100)</span>
+      <h3>Quanto você acredita nesse pensamento agora? <span class="hint" style="display:inline">(${SCALE_BELIEF})</span></h3>
+      ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span> ${r.crencaAntes[i] != null ? `<span class="muted">(antes: ${r.crencaAntes[i]}/100)</span>` : ''}
         ${r.crencaDepois[i] == null ? `<div><button type="button" class="btn secondary small mt" data-rate-c="${i}">Avaliar agora</button></div>` : rangeRow('cd-' + i, 'Grau de crença agora no pensamento ' + (i + 1), r.crencaDepois[i], 'cd', i)}</div>`).join('')}
       <h3 class="mt">Como você se sente agora <span class="hint" style="display:inline">(${SCALE_EMO})</span></h3>
       ${r.emocoes.length ? r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span> <span class="muted">(antes: ${e.antes}/100)</span>
         ${e.depois == null ? `<div><button type="button" class="btn secondary small mt" data-rate="${i}">Avaliar agora</button></div>` : rangeRow('ed-' + i, 'Intensidade de ' + e.nome + ' agora', e.depois, 'ed', i)}</div>`).join('')
         : '<div class="empty">Nenhuma emoção registrada na etapa 4.</div>'}`; },
     9: (r) => `
-      <p>A partir dessa perspectiva, existe algo que você pode fazer?</p>
-      <p class="muted">Pode ser algo pequeno, como conversar com alguém, buscar uma informação ou cuidar de si. Também é válido não fazer nada agora.</p>
+      <p>O que está ao seu alcance fazer diante dessa situação? Pense em um pequeno passo possível, respeitando seus limites e necessidades.</p>
+      <p class="muted">Também é válido não fazer nada agora. <strong>Se houver risco à sua segurança, priorize buscar ajuda</strong> (<a href="#/ajuda">ver apoio em crises</a>).</p>
       ${ta(r, 'planoAcao', 'Plano de ação', '', 'Ex.: Esperar até amanhã e, se ela não responder, perguntar se está tudo bem.')}`,
     10: (r) => `
       <p>Confira seu registro. Você pode salvar agora ou continuar depois.</p>
+      <div class="chips" role="group" aria-label="Editar uma etapa">${C.STEPS.map((x) => `<button type="button" class="chip" data-go="${x.n}">Editar ${x.n}. ${x.short}</button>`).join('')}</div>
+      <p></p>
       <div class="card">${RS.recordDetailHTML(r)}</div>
       ${ta(r, 'notas', 'Notas', 'Algo mais que queira lembrar?', '')}`,
   };
@@ -317,7 +322,9 @@
         if (rm) { const k = +rm.dataset.rmpt; ensureBelief(r); r.pensamentos.splice(k, 1); r.crencaAntes.splice(k, 1); r.crencaDepois.splice(k, 1); changed(); rerender(); return; }
         if (e.target.id === 'soc-next') { socIdx = (socIdx + 2) % C.SOCRATIC.length; root.querySelector('#soc-box').outerHTML = socraticBox(); focusAfter('#soc-next'); return; }
         const rc = e.target.closest('[data-rate-c]');
-        if (rc) { ensureBelief(r); const k = +rc.dataset.rateC; r.crencaDepois[k] = r.crencaAntes[k]; changed(); rerender(); focusAfter(`#cd-${k}`); return; }
+        if (rc) { ensureBelief(r); const k = +rc.dataset.rateC; r.crencaDepois[k] = r.crencaAntes[k] != null ? r.crencaAntes[k] : 50; changed(); rerender(); focusAfter(`#cd-${k}`); return; }
+        const sc = e.target.closest('[data-set-ca]');
+        if (sc) { ensureBelief(r); const k = +sc.dataset.setCa; r.crencaAntes[k] = 50; changed(); rerender(); focusAfter(`#ca-${k}`); return; }
         const rate = e.target.closest('[data-rate]');
         if (rate) { const em = r.emocoes[+rate.dataset.rate]; em.depois = em.antes; changed(); rerender(); focusAfter(`#ed-${rate.dataset.rate}`); }
       });
@@ -347,7 +354,7 @@
       const br = root.querySelector('#brief');
       if (br) br.addEventListener('click', () => finishWith('breve', 'Registro salvo. Você pode refletir sobre ele depois em “Outras perspectivas”.'));
       const fin = root.querySelector('#finish');
-      if (fin) fin.addEventListener('click', () => finishWith(hasReflection(r) ? 'completo' : 'breve', 'Registro salvo. Registrar já é um passo.'));
+      if (fin) fin.addEventListener('click', () => finishWith(hasReflection(r) ? 'completo' : 'breve', 'Seu registro foi salvo. Você dedicou um momento para compreender sua experiência. Não precisa ter todas as respostas agora. Pode revisitar esse registro sempre que desejar.'));
     },
   };
 

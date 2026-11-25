@@ -113,16 +113,25 @@ ${'{DISTORTIONS}'}
   ];
 
   const CRISIS = `
-<p><strong>Se você está pensando em tirar a própria vida, se machucar ou corre perigo agora, procure ajuda imediatamente.</strong> Você não precisa passar por isso sozinho(a).</p>
+<p><strong>Se você corre risco agora, priorize ajuda de emergência.</strong> Você não precisa passar por isso sozinho(a).</p>
+<h3>Risco imediato à vida ou emergência médica</h3>
 <ul class="notice-list">
-  <li><strong>CVV — Centro de Valorização da Vida: ligue 188.</strong> Gratuito, 24 horas, sigilo. Também atende por chat em cvv.org.br.</li>
-  <li><strong>SAMU: 192</strong>, em emergências médicas.</li>
-  <li><strong>Polícia: 190</strong>, se você estiver em perigo.</li>
-  <li>Vá ao <strong>pronto-socorro ou UPA</strong> mais próximo.</li>
-  <li>Procure um <strong>CAPS</strong> (Centro de Atenção Psicossocial) ou uma Unidade Básica de Saúde da sua cidade para acompanhamento.</li>
-  <li>Avise alguém de confiança e, se possível, não fique sozinho(a).</li>
+  <li><a href="tel:192"><strong>SAMU: ligue 192</strong></a>, ou vá ao <strong>pronto-socorro ou UPA</strong> mais próximo.</li>
 </ul>
-<p class="muted">O ReSignifica não monitora o que você escreve e não oferece atendimento em tempo real.</p>`;
+<h3>Ameaça à sua segurança</h3>
+<ul class="notice-list">
+  <li><a href="tel:190"><strong>Polícia: ligue 190</strong></a>.</li>
+</ul>
+<h3>Apoio emocional</h3>
+<ul class="notice-list">
+  <li><a href="tel:188"><strong>CVV (Centro de Valorização da Vida): ligue 188</strong></a>. Gratuito, 24 horas, com sigilo. Também atende por chat em <a href="https://cvv.org.br" target="_blank" rel="noopener noreferrer">cvv.org.br</a>.</li>
+</ul>
+<h3>Acompanhamento</h3>
+<ul class="notice-list">
+  <li>Procure um <strong>CAPS</strong> (Centro de Atenção Psicossocial) ou uma <strong>UBS</strong> (Unidade Básica de Saúde) da sua cidade.</li>
+</ul>
+<p>Se possível, avise uma pessoa de confiança e não fique sozinho(a).</p>
+<p class="muted">O ReSignifica não monitora o que você escreve e não oferece atendimento ou resposta em tempo real.</p>`;
 
   /* Boas-vindas (revisão do piloto, texto de Rosália Moreira) */
   const WELCOME = `
@@ -159,7 +168,7 @@ ${'{DISTORTIONS}'}
 <p>Oferecer um espaço acolhedor para que adultos, fazendo terapia ou não, compreendam seus pensamentos, reconheçam suas emoções, identifiquem padrões e descubram novas perspectivas.</p>
 <p><em>Acolher sem invadir. Orientar sem impor. Estimular a reflexão sem julgar. Proteger sem retirar a autonomia.</em></p>
 <h2>Idealização e conteúdo psicológico</h2>
-<p><strong>Rosália Moreira</strong>, psicóloga clínica, Terapia Cognitivo-Comportamental. <span class="muted">CRP a confirmar antes da publicação.</span></p>
+<p><strong>Rosália Moreira</strong>, psicóloga clínica, Terapia Cognitivo-Comportamental. CRP 04/37430.</p>
 <h2>Equipe</h2>
 <p>Desenvolvimento: Marlon.</p>
 <h2>Fundamentação</h2>
