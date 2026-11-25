@@ -1,10 +1,35 @@
-# ReSignifica · Versão piloto v0.2
+# ReSignifica · Versão piloto v0.3
 
 > *Um pensamento de cada vez.*
 > Implementação do **Briefing de produto v1.0** (23/11/2026), seguindo o escopo de MVP da §9.
 > É um app web responsivo e instalável (PWA), sem servidor. Os dados ficam no aparelho do usuário, criptografados.
 >
 > **Versão de teste online:** https://marlon-ti.github.io/resignifica/ · Guia rápido: [COMO-TESTAR.md](COMO-TESTAR.md)
+
+---
+
+## Novidades da versão 0.3 (25/11/2026)
+
+| Item | O que mudou |
+|---|---|
+| **Backup restaurável** | Perfil → Backup. Gera um arquivo `.json` cifrado (AES-GCM 256, chave derivada da *senha do backup* com PBKDF2-SHA256 310 mil iterações). Restaurar mescla: itens novos entram, item repetido fica com a versão mais recente, nada é apagado. Dados de exemplo não entram no backup |
+| **Nova emoção na reavaliação** | Na etapa 8 dá para adicionar uma emoção que surgiu depois da reflexão. Ela aparece como "surgiu após a reflexão" na revisão, no detalhe e no relatório, e não entra na comparação antes/depois |
+
+```
+ Aparelho A                                     Aparelho B (ou o mesmo, após reinstalar)
+ ┌───────────────┐   Criar backup   ┌──────────────────────┐   Restaurar   ┌───────────────┐
+ │ cofre cifrado │ ───────────────▶ │ ReSignifica-backup-  │ ────────────▶ │ conta nova ou │
+ │ (senha do app)│  + senha backup  │ AAAA-MM-DD.json      │ + senha backup│ existente     │
+ └───────────────┘                  │ cabeçalho legível +  │               │ (mescla)      │
+                                    │ conteúdo cifrado     │               └───────────────┘
+                                    └──────────────────────┘
+```
+
+**Tradeoff:** a senha do backup não é recuperável. Perdeu a senha, o arquivo vira lixo. É o preço de ninguém além do usuário conseguir ler o arquivo, nem quem o encontrar no e-mail ou na nuvem.
+
+## Versão 0.2.1 (avaliação consolidada, 25/11/2026)
+
+CRP 04/37430 na área Sobre; ajustes de texto; ajuda em crises por situação com telefones clicáveis; grau de crença sem resposta fica vazio; revisão final com edição direta por etapa; dados de exemplo fora da jornada e do relatório quando há registros reais.
 
 ---
 
@@ -87,7 +112,7 @@ python -m http.server 8080
  │  sw.js: cache só dos arquivos do app (offline). Nunca guarda dados.          │
  └──────────────────────────────────────────────────────────────────────────────┘
                  Nenhum dado sai do aparelho sem ação explícita do usuário
-                 (baixar PDF, compartilhar PDF, exportar JSON).
+                 (baixar PDF, compartilhar PDF, exportar JSON, criar backup).
 ```
 
 **Cadastro e entrada.** A senha gera uma chave (PBKDF2-SHA256, 310 mil iterações). A chave existe apenas em memória durante a sessão. Ao sair, recarregar a página ou ficar inativo (2, 5, 10 ou 30 minutos, configurável), a sessão fecha e é preciso digitar a senha de novo. Os dados permanecem salvos.
@@ -130,6 +155,7 @@ Teste automatizado ponta a ponta (Playwright, Chromium, 390×844 e 1280×860), *
 - Jornada, Outras perspectivas, Aprender
 - Relatório: com check-ins e campo em destaque → prévia → PDF (conteúdo do PDF conferido contra a prévia)
 - Exportação JSON
+- Backup (v0.3): senha curta e senhas diferentes recusadas; arquivo sem texto legível; restaurar em outra conta com senha errada recusa, com senha certa traz registros, check-ins e nome; restaurar de novo não duplica
 - **IndexedDB sem texto legível** (verificado buscando uma palavra registrada)
 - Senha errada recusada; troca de senha preserva os dados
 - Exclusão de conta remove tudo

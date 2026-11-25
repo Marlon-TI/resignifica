@@ -15,14 +15,14 @@
     emotionFreq(records, checkins) {
       const m = {};
       const add = (nome, v) => { const x = m[nome] || (m[nome] = { nome, n: 0, sum: 0 }); x.n++; x.sum += v; };
-      records.forEach((r) => (r.emocoes || []).forEach((e) => add(e.nome, e.antes)));
+      records.forEach((r) => (r.emocoes || []).forEach((e) => add(e.nome, e.antes != null ? e.antes : e.depois)));
       (checkins || []).forEach((c) => c.emocoes.forEach((e) => add(e.nome, e.intensidade)));
       return Object.values(m).map((x) => ({ nome: x.nome, n: x.n, media: Math.round(x.sum / x.n) })).sort((a, b) => b.n - a.n || b.media - a.media);
     },
     beforeAfter(records) {
       const m = {};
       records.forEach((r) => (r.emocoes || []).forEach((e) => {
-        if (e.depois == null) return;
+        if (e.depois == null || e.antes == null) return;
         const x = m[e.nome] || (m[e.nome] = { nome: e.nome, n: 0, a: 0, d: 0 });
         x.n++; x.a += e.antes; x.d += e.depois;
       }));

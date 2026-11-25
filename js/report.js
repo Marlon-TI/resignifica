@@ -108,7 +108,7 @@
           if (F.situacao) { if (x.situacao) rows.push(['Situação', x.situacao]); if (x.contexto) rows.push(['Contexto', x.contexto]); }
           if (F.pensamentos) { const p = thoughtsWithBelief(x, F.crenca); if (p.length) rows.push(['Pensamento automático', p.join('\n')]); }
           else if (F.crenca) { const c = (x.crencaAntes || []).filter((v, k) => v != null && (x.pensamentos[k] || '').trim()); if (c.length) rows.push(['Grau de crença', c.map((v) => `${v}/100`).join(' · ')]); }
-          if (F.emocoes && x.emocoes.length) rows.push(['Emoções', x.emocoes.map((e) => `${e.nome}: ${e.antes}/100`).join(' · ')]);
+          if (F.emocoes && x.emocoes.length) { const em = x.emocoes.filter((e) => e.antes != null); if (em.length) rows.push(['Emoções', em.map((e) => `${e.nome}: ${e.antes}/100`).join(' · ')]); }
           if (F.corpo) { if (x.sensacoes) rows.push(['Sensações físicas', x.sensacoes]); if (x.comportamento) rows.push(['Comportamento', x.comportamento]); }
           if (F.evidencias) {
             if (x.evidFavor) rows.push(['Evidências que sustentam o pensamento', x.evidFavor]);
@@ -122,7 +122,7 @@
             const cr = (x.crencaDepois || []).map((v, k) => (v != null && (x.pensamentos[k] || '').trim() ? (x.crencaAntes[k] != null ? `de ${x.crencaAntes[k]} para ${v}` : `${v}/100`) : '')).filter(Boolean);
             if (cr.length) rows.push(['Grau de crença após a reflexão', cr.join(' · ')]);
             const ev = x.emocoes.filter((e) => e.depois != null);
-            if (ev.length) rows.push(['Emoções após a reflexão', ev.map((e) => `${e.nome}: de ${e.antes} para ${e.depois}`).join(' · ')]);
+            if (ev.length) rows.push(['Emoções após a reflexão', ev.map((e) => (e.antes == null ? `${e.nome}: ${e.depois}/100 (surgiu após a reflexão)` : `${e.nome}: de ${e.antes} para ${e.depois}`)).join(' · ')]);
           }
           if (F.plano && x.planoAcao) rows.push(['Plano de ação', x.planoAcao]);
           if (F.notas && x.notas) rows.push(['Notas', x.notas]);

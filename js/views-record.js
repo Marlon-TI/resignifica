@@ -16,7 +16,7 @@
   RS.recordItem = (r) => `
     <a class="item" href="#/pensamentos/${r.id}">
       <div class="meta"><span>${fmtDateTime(r.when)}</span>${statusBadge(r.status)}${r.demo ? '<span class="badge brief">Exemplo</span>' : ''}
-        ${(r.emocoes || []).slice(0, 3).map((e) => `<span>${esc(e.nome)} ${e.antes}</span>`).join(' · ')}</div>
+        ${(r.emocoes || []).filter((e) => e.antes != null).slice(0, 3).map((e) => `<span>${esc(e.nome)} ${e.antes}</span>`).join(' · ')}</div>
       <div class="text">${esc(truncate(firstThought(r) || r.situacao || 'Sem texto ainda', 140))}</div>
       ${r.situacao && firstThought(r) ? `<div class="muted">${esc(truncate(r.situacao, 110))}</div>` : ''}
     </a>`;
@@ -95,7 +95,7 @@
         <dt>Quando</dt><dd>${fmtDateTime(r.when)}</dd>
         ${block('Situação', r.situacao)}${block('Contexto', r.contexto)}
         ${thoughts.length ? `<dt>Pensamento${thoughts.length > 1 ? 's' : ''} automático${thoughts.length > 1 ? 's' : ''} e grau de crença</dt><dd>${(r.pensamentos || []).map((t, i) => (t && t.trim() ? `• ${esc(t)}${belief(r, i)}` : '')).filter(Boolean).join('\n')}</dd>` : ''}
-        ${(r.emocoes || []).length ? `<dt>Emoções e intensidade</dt><dd>${r.emocoes.map((e) => `${esc(e.nome)}: ${e.antes}/100${e.depois != null ? ` → ${e.depois}/100 após a reflexão` : ''}`).join('\n')}</dd>` : ''}
+        ${(r.emocoes || []).length ? `<dt>Emoções e intensidade</dt><dd>${r.emocoes.map((e) => (e.antes == null ? `${esc(e.nome)}: ${e.depois}/100 (surgiu após a reflexão)` : `${esc(e.nome)}: ${e.antes}/100${e.depois != null ? ` → ${e.depois}/100 após a reflexão` : ''}`)).join('\n')}</dd>` : ''}
         ${block('Sensações físicas', r.sensacoes)}${block('Comportamento', r.comportamento)}
         ${block('Evidências que sustentam o pensamento', r.evidFavor)}${block('Evidências que eu não estava considerando', r.evidContra)}
         ${block('Outras maneiras de compreender a situação', r.outrasExplic)}${block('O que eu diria a alguém querido', r.alguemQuerido)}
@@ -196,14 +196,14 @@
     4: (r) => `
       <p class="example">Exemplo: ansiedade 70/100.</p>
       <fieldset><legend>Quais emoções você sentiu?</legend>
-        <div class="chips">${[...new Set([...C.EMOTIONS, ...r.emocoes.map((e) => e.nome)])].map((n) => `
-          <button type="button" class="chip" data-emo="${esc(n)}" aria-pressed="${r.emocoes.some((e) => e.nome === n)}">${esc(n)}</button>`).join('')}</div>
+        <div class="chips">${[...new Set([...C.EMOTIONS, ...r.emocoes.filter((e) => e.antes != null).map((e) => e.nome)])].map((n) => `
+          <button type="button" class="chip" data-emo="${esc(n)}" aria-pressed="${r.emocoes.some((e) => e.nome === n && e.antes != null)}">${esc(n)}</button>`).join('')}</div>
         <div class="btn-row mt"><label for="emo-outra" class="sr-only">Outra emoção</label>
           <input id="emo-outra" type="text" placeholder="Outra emoção" maxlength="30" style="max-width:240px">
           <button type="button" class="btn secondary small" id="emo-add">Adicionar</button></div>
       </fieldset>
-      <div id="emo-ints">${r.emocoes.length ? `<p class="label">Com qual intensidade?<span class="hint">${SCALE_EMO}</span></p>` : ''}
-        ${r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span>${rangeRow('ea-' + i, 'Intensidade de ' + e.nome, e.antes, 'ea', i)}</div>`).join('')}</div>`,
+      <div id="emo-ints">${r.emocoes.some((e) => e.antes != null) ? `<p class="label">Com qual intensidade?<span class="hint">${SCALE_EMO}</span></p>` : ''}
+        ${r.emocoes.map((e, i) => (e.antes == null ? '' : `<div class="emo-int"><span class="name">${esc(e.nome)}</span>${rangeRow('ea-' + i, 'Intensidade de ' + e.nome, e.antes, 'ea', i)}</div>`)).join('')}</div>`,
     5: (r) => `
       <p class="example">Exemplo: aperto no peito, coração acelerado, tensão nos ombros.</p>
       ${ta(r, 'sensacoes', 'O que você percebeu no corpo?', '', '')}`,
@@ -231,9 +231,15 @@
       ${r.pensamentos.map((p, i) => `<div class="emo-int"><span class="name">“${thoughtLabel(r, i)}”</span> ${r.crencaAntes[i] != null ? `<span class="muted">(antes: ${r.crencaAntes[i]}/100)</span>` : ''}
         ${r.crencaDepois[i] == null ? `<div><button type="button" class="btn secondary small mt" data-rate-c="${i}">Avaliar agora</button></div>` : rangeRow('cd-' + i, 'Grau de crença agora no pensamento ' + (i + 1), r.crencaDepois[i], 'cd', i)}</div>`).join('')}
       <h3 class="mt">Como você se sente agora <span class="hint" style="display:inline">(${SCALE_EMO})</span></h3>
-      ${r.emocoes.length ? r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span> <span class="muted">(antes: ${e.antes}/100)</span>
+      ${r.emocoes.length ? r.emocoes.map((e, i) => `<div class="emo-int"><span class="name">${esc(e.nome)}</span> <span class="muted">${e.antes != null ? `(antes: ${e.antes}/100)` : '(surgiu após a reflexão)'}</span>
+        ${e.antes == null ? `<button type="button" class="btn ghost small" data-rm-nova="${i}" aria-label="Remover ${esc(e.nome)}">Remover</button>` : ''}
         ${e.depois == null ? `<div><button type="button" class="btn secondary small mt" data-rate="${i}">Avaliar agora</button></div>` : rangeRow('ed-' + i, 'Intensidade de ' + e.nome + ' agora', e.depois, 'ed', i)}</div>`).join('')
-        : '<div class="empty">Nenhuma emoção registrada na etapa 4.</div>'}`; },
+        : '<p class="muted">Nenhuma emoção registrada na etapa 4.</p>'}
+      <p class="label mt">Surgiu alguma outra emoção agora? <span class="hint" style="display:inline">(opcional)</span></p>
+      <div class="btn-row"><label for="emo-nova" class="sr-only">Nova emoção</label>
+        <input id="emo-nova" type="text" placeholder="Ex.: alívio, cansaço" maxlength="30" style="max-width:240px" list="emo-list">
+        <datalist id="emo-list">${C.EMOTIONS.map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
+        <button type="button" class="btn secondary small" id="emo-nova-add">Adicionar</button></div>`; },
     9: (r) => `
       <p>O que está ao seu alcance fazer diante dessa situação? Pense em um pequeno passo possível, respeitando seus limites e necessidades.</p>
       <p class="muted">Também é válido não fazer nada agora. <strong>Se houver risco à sua segurança, priorize buscar ajuda</strong> (<a href="#/ajuda">ver apoio em crises</a>).</p>
@@ -312,8 +318,11 @@
         const chip = e.target.closest('[data-emo]');
         if (chip) {
           const name = chip.dataset.emo;
-          const i = r.emocoes.findIndex((x) => x.nome === name);
-          if (i >= 0) r.emocoes.splice(i, 1); else r.emocoes.push({ nome: name, antes: 50, depois: null });
+          const i = r.emocoes.findIndex((x) => x.nome === name && x.antes != null);
+          const nv = r.emocoes.findIndex((x) => x.nome === name && x.antes == null);
+          if (i >= 0) r.emocoes.splice(i, 1);
+          else if (nv >= 0) r.emocoes[nv].antes = 50; // já tinha surgido na reavaliação: passa a ter valor inicial
+          else r.emocoes.push({ nome: name, antes: 50, depois: null });
           changed(); rerender(); focusAfter(`[data-emo="${cssq(name)}"]`); return;
         }
         if (e.target.id === 'emo-add') { addCustom(); return; }
@@ -326,7 +335,10 @@
         const sc = e.target.closest('[data-set-ca]');
         if (sc) { ensureBelief(r); const k = +sc.dataset.setCa; r.crencaAntes[k] = 50; changed(); rerender(); focusAfter(`#ca-${k}`); return; }
         const rate = e.target.closest('[data-rate]');
-        if (rate) { const em = r.emocoes[+rate.dataset.rate]; em.depois = em.antes; changed(); rerender(); focusAfter(`#ed-${rate.dataset.rate}`); }
+        if (rate) { const em = r.emocoes[+rate.dataset.rate]; em.depois = em.antes != null ? em.antes : 50; changed(); rerender(); focusAfter(`#ed-${rate.dataset.rate}`); return; }
+        const rmn = e.target.closest('[data-rm-nova]');
+        if (rmn) { r.emocoes.splice(+rmn.dataset.rmNova, 1); changed(); rerender(); return; }
+        if (e.target.id === 'emo-nova-add') addNova();
       });
       const outra = root.querySelector('#emo-outra');
       const addCustom = () => {
@@ -337,6 +349,16 @@
         changed(); rerender();
       };
       if (outra) outra.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } });
+      const nova = root.querySelector('#emo-nova');
+      const addNova = () => {
+        const v = nova.value.trim();
+        if (!v) return;
+        const name = v.charAt(0).toUpperCase() + v.slice(1);
+        if (r.emocoes.some((x) => x.nome.toLowerCase() === name.toLowerCase())) { RS.toast('Essa emoção já está na lista.'); return; }
+        r.emocoes.push({ nome: name, antes: null, depois: 50 });
+        changed(); rerender(); focusAfter(`#ed-${r.emocoes.length - 1}`);
+      };
+      if (nova) nova.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addNova(); } });
 
       root.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
         if (r.persisted !== false && r.status === 'rascunho') { r.step = +b.dataset.go; RS.store.upsertRecord(r); }

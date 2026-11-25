@@ -37,4 +37,4 @@ No iPhone, instalar é recomendado: sem isso, o Safari pode apagar os dados apó
 
 - Esta é uma **versão de teste**. Os dados ficam **só no seu aparelho**, criptografados. Ninguém, nem o Marlon, consegue vê-los.
 - Os textos educativos, de apoio em crise e a política de privacidade são **provisórios** e precisam de revisão profissional.
-- Se trocar de celular ou limpar os dados do navegador, os registros somem. Nesta versão **não há backup restaurável**: a exportação gera uma cópia legível, que não pode ser importada de volta.
+- Se trocar de celular ou limpar os dados do navegador, os registros somem. Para se proteger, use **Perfil e privacidade → Backup**: o arquivo é protegido por senha e pode ser restaurado em outro aparelho.
