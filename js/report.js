@@ -10,16 +10,16 @@
     ['situacao', 'Situação'], ['pensamentos', 'Pensamentos automáticos'], ['crenca', 'Grau de crença'],
     ['emocoes', 'Emoções e intensidades'], ['corpo', 'Sensações físicas e comportamento'],
     ['evidencias', 'Evidências e reflexão'], ['alternativos', 'Formas mais equilibradas de compreender'],
-    ['reavaliacao', 'Reavaliação (crença e emoções após a reflexão)'], ['plano', 'Plano de ação'], ['notas', 'Notas'],
+    ['reavaliacao', 'Reavaliação (crença e emoções após a reflexão)'], ['plano', 'Plano de ação'], ['notas', 'Notas e respostas abertas dos check-ins'],
   ];
   const TALK_Q = 'Existe algo que você gostaria de conversar com seu terapeuta na próxima sessão?';
 
   let st = null;
   const reset = () => {
     st = {
-      stage: 'form', format: 'resumido', period: '30', from: RS.toDateInput(RS.daysAgo(30)), to: RS.toDateInput(new Date()),
+      stage: 'form', format: 'completo', period: '30', from: RS.toDateInput(RS.daysAgo(30)), to: RS.toDateInput(new Date()),
       excluded: new Set(), excludedCk: new Set(), fields: Object.fromEntries(FIELDS.map(([k]) => [k, true])),
-      includeDemo: !RS.demo.hasReal(), includeCheckins: false, nameMode: 'none', customName: '', talk: '', pdf: null, blocks: null,
+      includeDemo: !RS.demo.hasReal(), includeCheckins: true, nameMode: 'none', customName: '', talk: '', pdf: null, blocks: null,
     };
   };
 
@@ -296,11 +296,11 @@
         <form id="rp">
           <section class="card"><h2>1. Formato</h2>
             <div class="seg" role="group" aria-label="Formato do relatório">
-              <button type="button" data-format="resumido" aria-pressed="${st.format === 'resumido'}">Resumido</button>
-              <button type="button" data-format="completo" aria-pressed="${st.format === 'completo'}">Completo</button></div>
+              <button type="button" data-format="completo" aria-pressed="${st.format === 'completo'}">Completo: com o que escrevi</button>
+              <button type="button" data-format="resumido" aria-pressed="${st.format === 'resumido'}">Resumido: só números e padrões</button></div>
             <p class="muted mt mb0">${st.format === 'resumido'
-              ? '<strong>Resumido:</strong> frequência de registros, emoções predominantes, padrões que você marcou, evolução emocional e assuntos para a sessão. Não inclui o texto dos registros.'
-              : '<strong>Completo:</strong> situações, pensamentos, grau de crença, emoções, reflexões, reavaliação e plano de ação, conforme os campos que você escolher.'}</p>
+              ? '<strong>Resumido:</strong> frequência de registros, emoções predominantes, padrões que você marcou, evolução emocional e assuntos para a sessão. <strong>Não inclui nada do que você escreveu</strong> (situações, pensamentos, reflexões, notas). Para levar seus textos, escolha Completo.'
+              : '<strong>Completo:</strong> tudo o que você escreveu em cada registro (situação, contexto, pensamentos, grau de crença, emoções, sensações, comportamento, evidências, outras maneiras de compreender, o que diria a alguém querido, forma mais equilibrada, reavaliação, plano de ação e notas) e as respostas dos check-ins. Desmarque abaixo o que não quiser incluir.'}</p>
           </section>
           <section class="card"><h2>2. Período</h2>
             <div class="seg" role="group" aria-label="Período">

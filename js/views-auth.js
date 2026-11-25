@@ -16,6 +16,7 @@
           <h1>Boas-vindas!</h1>
           ${RS.content.WELCOME}
         </div>
+        <div class="card">${RS.authorCard(true)}</div>
         <div class="card soft">
           <h2>Antes de começar</h2>
           ${RS.content.NOTICE_BLOCKS.map((n) => `<h3 class="mt">${n.title}</h3><p>${n.text}</p>`).join('')}

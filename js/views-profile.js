@@ -77,7 +77,7 @@
           <p>O ReSignifica é uma ferramenta educativa e de autoconhecimento. Não faz diagnóstico, não oferece atendimento psicológico e não substitui terapia.</p>
           <a class="btn secondary" href="#/ajuda">${RS.icon('help')} Ajuda e apoio em crises</a>
         </section>
-        <p class="muted">ReSignifica · versão piloto 0.3 · briefing v1.0 + revisão do piloto (24/11/2026) · <a href="#/sobre">Sobre o ReSignifica</a></p>`;
+        <p class="muted">ReSignifica · versão piloto 0.3.1 · briefing v1.0 + revisão do piloto (24/11/2026) · <a href="#/sobre">Sobre o ReSignifica</a></p>`;
     },
     mount: (root) => {
       const { data } = RS.store.session;

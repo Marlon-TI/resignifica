@@ -108,6 +108,7 @@ window.RS = window.RS || {};
     lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
+    ext: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   };
   const icon = (name) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name] || ''}</svg>`;
 
@@ -115,4 +116,20 @@ window.RS = window.RS || {};
     esc, uid, pad, toLocalInput, toDateInput, dayKey, fmtDate, fmtDateTime, fmtLong, startOfDay, endOfDay, daysAgo,
     debounce, truncate, toast, modal, confirmDialog, downloadBlob, icon,
   });
+})(window.RS);
+
+/* Cartão da idealizadora (Sobre, Início, Aprender, Boas-vindas) */
+(function (RS) {
+  RS.authorCard = (compact) => {
+    const a = RS.content.AUTHOR;
+    const ig = `<a class="btn ${compact ? 'ghost small' : 'secondary small'}" href="${a.instagram}" target="_blank" rel="noopener noreferrer">${RS.icon('ext')} Instagram ${a.handle}</a>`;
+    return `<div class="author${compact ? ' compact' : ''}">
+      <div class="avatar" aria-hidden="true">RM</div>
+      <div class="author-txt">
+        <p class="label mb0">Idealização e conteúdo psicológico</p>
+        <p class="author-name mb0">${a.name}</p>
+        <p class="muted mb0">${a.role} · ${a.crp}</p>
+        <div class="mt-s">${ig}</div>
+      </div></div>`;
+  };
 })(window.RS);

@@ -288,3 +288,12 @@ a.item:hover { border-color: var(--salvia); }
 .check input[type=radio] { width: 22px; height: 22px; margin: 1px 0 0; flex: 0 0 22px; accent-color: var(--link); }
 .card h3 { margin-top: 0; }
 .hint { font-size: .95rem; }
+
+/* Cartão da idealizadora */
+.author { display: flex; gap: 14px; align-items: flex-start; }
+.author .avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: var(--link); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; letter-spacing: .5px; }
+.author.compact .avatar { width: 44px; height: 44px; font-size: .95rem; }
+.author-name { font-weight: 700; font-size: 1.1rem; }
+.author-txt { min-width: 0; }
+.author .btn { white-space: normal; word-break: break-word; }
+.mt-s { margin-top: 8px; }

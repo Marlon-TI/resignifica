@@ -38,6 +38,7 @@
         </section>
         <a class="card soft" href="#/terapeuta" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit">${RS.icon('share')}
           <span><strong>Compartilhar com meu terapeuta</strong><br><span class="muted">Gere um relatório em PDF com os registros que você escolher. Opcional.</span></span></a>
+        <div class="card">${RS.authorCard(true)}</div>
         ${!standalone ? `<p class="muted">Dica: adicione o ReSignifica à tela inicial do celular para usar como aplicativo.</p>` : ''}`;
     },
     mount: (root) => {
@@ -194,7 +195,7 @@
     title: 'Aprender', nav: 'aprender',
     render: () => `
       <h1>Aprender para transformar</h1>
-      <p class="muted">Conteúdos curtos sobre a base do método.</p>
+      <p class="muted">Conteúdos curtos sobre a base do método, escritos sob a responsabilidade de ${esc(C.AUTHOR.name)}, psicóloga (${C.AUTHOR.crp}).</p>
       <div class="learn-grid">${C.LEARN.map((a) => `<a class="learn-card" href="#/aprender/${a.id}"><div class="card"><h2>${esc(a.title)}</h2><p class="muted mb0">${esc(a.summary)}</p></div></a>`).join('')}</div>`,
   };
   RS.views.article = {
@@ -224,5 +225,5 @@
 
   RS.views.privacy = { title: 'Política de Privacidade', nav: 'perfil', render: () => `<div class="card article"><h1>Política de Privacidade</h1>${RS.views.privacyText()}</div>` };
   RS.views.terms = { title: 'Termos de Uso', nav: 'perfil', render: () => `<div class="card article"><h1>Termos de Uso</h1>${C.TERMS}</div>` };
-  RS.views.about = { title: 'Sobre o ReSignifica', nav: 'sobre', render: () => `<div class="card article"><h1>Sobre o ReSignifica</h1><p><strong>Um pensamento de cada vez.</strong></p>${C.ABOUT}</div>` };
+  RS.views.about = { title: 'Sobre o ReSignifica', nav: 'sobre', render: () => `<div class="card article"><h1>Sobre o ReSignifica</h1><p><strong>Um pensamento de cada vez.</strong></p></div><div class="card soft">${RS.authorCard()}<p class="muted mt mb0">O ReSignifica foi idealizado por Rosália, que é responsável por todo o conteúdo psicológico do app. O app não oferece atendimento: para isso, procure um profissional de sua escolha.</p></div><div class="card article">${C.ABOUT}</div>` };
 })(window.RS);

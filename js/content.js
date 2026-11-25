@@ -163,12 +163,16 @@ ${'{DISTORTIONS}'}
 <h2>Versão de teste</h2>
 <p>Durante o piloto, recomenda-se usar dados fictícios até a validação de segurança.</p>`;
 
+  /* Idealizadora e responsável pelo conteúdo psicológico */
+  const AUTHOR = {
+    name: 'Rosália Moreira', role: 'Psicóloga clínica · Terapia Cognitivo-Comportamental', crp: 'CRP 04/37430',
+    instagram: 'https://www.instagram.com/rosaliamoreira_psicologa', handle: '@rosaliamoreira_psicologa',
+  };
+
   const ABOUT = `
 <h2>Propósito</h2>
 <p>Oferecer um espaço acolhedor para que adultos, fazendo terapia ou não, compreendam seus pensamentos, reconheçam suas emoções, identifiquem padrões e descubram novas perspectivas.</p>
 <p><em>Acolher sem invadir. Orientar sem impor. Estimular a reflexão sem julgar. Proteger sem retirar a autonomia.</em></p>
-<h2>Idealização e conteúdo psicológico</h2>
-<p><strong>Rosália Moreira</strong>, psicóloga clínica, Terapia Cognitivo-Comportamental. CRP 04/37430.</p>
 <h2>Equipe</h2>
 <p>Desenvolvimento: Marlon.</p>
 <h2>Fundamentação</h2>
@@ -180,5 +184,5 @@ ${'{DISTORTIONS}'}
 <h2>Limites</h2>
 <p>Ferramenta educativa e de autoconhecimento. Não realiza diagnósticos, não oferece atendimento psicológico e não substitui psicoterapia. Não monitora registros nem oferece atendimento em tempo real.</p>`;
 
-  RS.content = { WELCOME, NOTICE_BLOCKS, TERMS, ABOUT, EMOTIONS, MOODS, STEPS, REVIEW_STEP, PRINCIPLE, SOCRATIC, DISTORTIONS, LEARN, CRISIS, NOTICES };
+  RS.content = { AUTHOR, WELCOME, NOTICE_BLOCKS, TERMS, ABOUT, EMOTIONS, MOODS, STEPS, REVIEW_STEP, PRINCIPLE, SOCRATIC, DISTORTIONS, LEARN, CRISIS, NOTICES };
 })(window.RS);

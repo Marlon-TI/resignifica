@@ -1,4 +1,4 @@
-# ReSignifica · Versão piloto v0.3
+# ReSignifica · Versão piloto v0.3.1
 
 > *Um pensamento de cada vez.*
 > Implementação do **Briefing de produto v1.0** (23/11/2026), seguindo o escopo de MVP da §9.
@@ -7,6 +7,11 @@
 > **Versão de teste online:** https://marlon-ti.github.io/resignifica/ · Guia rápido: [COMO-TESTAR.md](COMO-TESTAR.md)
 
 ---
+
+## Versão 0.3.1 (25/11/2026)
+
+- **Relatório para terapeuta:** o formato padrão agora é **Completo**, que inclui tudo o que a pessoa escreveu em cada registro e as respostas abertas dos check-ins (check-ins incluídos por padrão). O Resumido continua disponível e avisa que não leva nenhum texto. Teste conferiu os 14 campos abertos no PDF.
+- **Rosália em destaque:** cartão com nome, CRP e link para o Instagram (@rosaliamoreira_psicologa) nas Boas-vindas, no Início e no Sobre; crédito na tela Aprender.
 
 ## Novidades da versão 0.3 (25/11/2026)
 
